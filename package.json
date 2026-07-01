@@ -1,0 +1,10 @@
+{
+  "name": "aloqapro-local-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "node server.js",
+    "electron": "electron ."
+  }
+}

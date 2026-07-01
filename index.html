@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AloqaPro</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="images/logo2.png">
+<meta name="theme-color" content="#8448ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src="./env.js"></script>
+<script src="./supabase.js"></script>
+<script>window.wasmPath = './';</script>
+<script defer src="./face-api.js"></script>
+<script defer src="./xlsx.full.min.js"></script>
+<script defer src="./jspdf.umd.min.js"></script>
+<script defer src="./jspdf.plugin.autotable.min.js"></script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<div id="afkBanner">⚠️ <span id="afkBannerTxt">Yuz aniqlanmadi! AFK vaqt hisoblanmoqda...</span></div>
+<div id="autoEndBanner">✅ <span id="autoEndTxt">Ish vaqti tugadi. Tizim tomonidan yakunlandi (18:00)</span></div>
+<div id="breakBanner">☕ <span id="breakBannerTxt">Tanaffus vaqtingiz: 0:00 / 30 daqiqa</span></div>
+
+<div id="installBanner">
+  <p>📱 AloqaPro ni o'rnatish</p>
+  <div class="install-btns">
+    <button class="btn-install" onclick="installPWA()">O'rnatish</button>
+    <button class="btn-install-no" onclick="dismissInstall()">Keyinroq</button>
+  </div>
+</div>
+
+<div id="ipBlockPage">
+  <div class="ip-card">
+    <div class="ip-icon">🔒</div>
+    <h2 id="ipb_t">Kirish taqiqlandi</h2>
+    <p id="ipb_p">Bu tizimga faqat ishxona tarmog'i orqali kirishingiz mumkin.</p>
+    <p id="ipb_p2" style="font-size:12px;color:var(--text3);margin-top:6px">Sizning IP manzilingiz:</p>
+    <span class="ip-val" id="ipb_val">aniqlanmoqda...</span>
+  </div>
+</div>
+
+<div id="loginPage">
+  <div class="lp-lang">
+    <label class="theme-toggle" title="Dark/Light Mode">
+      <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+      <span class="theme-slider"></span>
+    </label>
+    <div class="lsw">
+      <button class="lb active" id="ll_uz" onclick="setLang('uz')">
+        <span class="flag"><svg viewBox="0 0 34 22"><rect width="34" height="7.33" fill="#1EB3E4"/><rect y="7.33" width="34" height="7.34" fill="#fff"/><rect y="14.67" width="34" height="7.33" fill="#32A84C"/><rect y="6.9" width="34" height=".8" fill="#CE2028"/><rect y="14.3" width="34" height=".8" fill="#CE2028"/><circle cx="9" cy="3.7" r="2.3" fill="#fff"/><circle cx="10.1" cy="3.7" r="2.3" fill="#1EB3E4"/><circle cx="13" cy="1.4" r=".55" fill="#fff"/><circle cx="14.5" cy="2.4" r=".55" fill="#fff"/><circle cx="15.5" cy="3.9" r=".55" fill="#fff"/><circle cx="14.5" cy="5.3" r=".55" fill="#fff"/><circle cx="13" cy="6.3" r=".55" fill="#fff"/></svg></span>
+      </button>
+      <span class="lsep"></span>
+      <button class="lb" id="ll_ru" onclick="setLang('ru')">
+        <span class="flag"><svg viewBox="0 0 34 22"><rect width="34" height="7.33" fill="#fff"/><rect y="7.33" width="34" height="7.34" fill="#1C3F94"/><rect y="14.67" width="34" height="7.33" fill="#CE2028"/></svg></span>
+      </button>
+    </div>
+  </div>
+  <div class="logo-blk">
+    <div class="logo-stack">
+      <img src="images/dd.png" alt="AloqaPro" class="logo-img-main" onerror="this.style.display='none'">
+    </div>
+  </div>
+  <div class="login-card">
+    <h2 id="lc_t">Nazorat tizimiga xush kelibsiz!</h2>
+    <p id="lc_s">Login va parolni kiriting!</p>
+    <form id="loginForm" onsubmit="event.preventDefault(); doLogin();">
+      <div class="iw"><input type="email" id="inp_l" placeholder="Email" autocomplete="username"></div>
+      <div class="iw">
+        <input type="password" id="inp_p" placeholder="Parol" autocomplete="current-password">
+        <button class="eye" onclick="toggleEye()" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10 10 0 0 1 12 20C5 20 1 12 1 12a18 18 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
+      <button class="lbtn" id="lbtn" type="submit"><span id="lbtnLabel">Kirish</span></button>
+      <div class="lerr" id="lerr"></div>
+    </form>
+  </div>
+</div>
+
+<div id="adminPage">
+  <div class="sb-overlay" id="sb_overlay" onclick="closeSidebar()"></div>
+  <div class="layout">
+    <div class="sidebar" id="sidebar">
+      <div class="sb-head">
+        <img src="images/logo2.png" alt="" class="sb-logo-img" onerror="this.style.display='none'">
+        <span class="sb-logo-txt">Aloqa<span>Pro</span></span>
+      </div>
+      <div class="sb-nav">
+        <button class="nbtn active" id="nav_main" onclick="adminTab('main');closeSidebar()"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span id="n_main">Asosiy</span></button>
+        <button class="nbtn" id="nav_pbx" onclick="adminTab('pbx');closeSidebar()"><span class="ni" data-pbx-icon="PhoneCall"></span><span id="n_pbx">Qo'ng'iroqlar</span></button>
+        <button class="nbtn" id="nav_amocrm" onclick="adminTab('amocrm');closeSidebar()"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span><span id="n_amocrm">amoCRM vazifalari</span></button>
+        <button class="nbtn" id="nav_feedback" onclick="adminTab('feedback');closeSidebar()"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span><span id="n_fb">Fikrlar</span> <span id="fbBadge" class="notif-badge hidden">0</span></button>
+        <button class="nbtn" id="nav_notif" onclick="adminTab('notif');closeSidebar()"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-ring"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/></svg></span><span id="n_notif">Bildirishnomalar</span> <span id="notifBadgeAdmin" class="notif-badge hidden">0</span></button>
+        <button class="nbtn" id="nav_settings" onclick="adminTab('settings');closeSidebar()"><span class="ni"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span id="n_set">Sozlamalar</span></button>
+      </div>
+      <div class="sb-bottom">
+        <label class="theme-toggle" title="Mavzu"><input type="checkbox" id="themeToggle4" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+        <div class="lsw">
+          <button class="lb active" id="sl_uz" onclick="setLang('uz')"><span class="flag"><svg viewBox="0 0 34 22"><rect width="34" height="7.33" fill="#1EB3E4"/><rect y="7.33" width="34" height="7.34" fill="#fff"/><rect y="14.67" width="34" height="7.33" fill="#32A84C"/><rect y="6.9" width="34" height=".8" fill="#CE2028"/><rect y="14.3" width="34" height=".8" fill="#CE2028"/><circle cx="9" cy="3.7" r="2.3" fill="#fff"/><circle cx="10.1" cy="3.7" r="2.3" fill="#1EB3E4"/></svg></span></button>
+          <span class="lsep"></span>
+          <button class="lb" id="sl_ru" onclick="setLang('ru')"><span class="flag"><svg viewBox="0 0 34 22"><rect width="34" height="7.33" fill="#fff"/><rect y="7.33" width="34" height="7.34" fill="#1C3F94"/><rect y="14.67" width="34" height="7.33" fill="#CE2028"/></svg></span></button>
+        </div>
+        <button class="xbtn" onclick="doLogout()" style="font-size:11px;padding:5px 10px">Chiqish</button>
+      </div>
+    </div>
+    <div class="mcol">
+      <div class="tophdr">
+        <button class="hamburger" id="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+        <h1 id="admTitle">Boshqaruv paneli</h1>
+        <div class="hdr-r">
+          <span class="hdr-date" id="admDate"></span>
+          <label class="theme-toggle" title="Mavzu"><input type="checkbox" id="themeToggle2" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+          <div class="lsw">
+            <button class="lb active" id="al_uz" onclick="setLang('uz')"><span class="flag"><svg viewBox="0 0 34 22"><rect width="34" height="7.33" fill="#1EB3E4"/><rect y="7.33" width="34" height="7.34" fill="#fff"/><rect y="14.67" width="34" height="7.33" fill="#32A84C"/><rect y="6.9" width="34" height=".8" fill="#CE2028"/><rect y="14.3" width="34" height=".8" fill="#CE2028"/><circle cx="9" cy="3.7" r="2.3" fill="#fff"/><circle cx="10.1" cy="3.7" r="2.3" fill="#1EB3E4"/></svg></span></button>
+            <span class="lsep"></span>
+            <button class="lb" id="al_ru" onclick="setLang('ru')"><span class="flag"><svg viewBox="0 0 34 22"><rect width="34" height="7.33" fill="#fff"/><rect y="7.33" width="34" height="7.34" fill="#1C3F94"/><rect y="14.67" width="34" height="7.33" fill="#CE2028"/></svg></span></button>
+          </div>
+          <button class="xbtn" id="admExit" onclick="doLogout()">Chiqish</button>
+        </div>
+      </div>
+      <div class="pbody">
+        <div id="tab_main">
+          <div class="scards">
+            <div class="scard scard-status scard-work"><h4 id="sc1">Bugun ishda</h4><div class="snum" id="sw">0</div></div>
+            <div class="scard scard-status scard-late"><h4 id="sc2">Kechikkan</h4><div class="snum" id="sl">0</div></div>
+            <div class="scard scard-status scard-absent"><h4 id="sc3">Kelmagan</h4><div class="snum" id="sa">0</div></div>
+            <div class="scard">
+              <h4 id="sc_leave">Ish ta'tili</h4>
+              <div class="snum" id="sleave">0</div>
+              <button class="bg2" id="sc_leave_btn" style="margin-top:10px" onclick="openWorkLeaveModal()">Ish ta'tilidagi xodimlar</button>
+            </div>
+          </div>
+          <div class="box">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <span class="btitle" id="dash_t" style="margin:0">Dashboard</span>
+              <span style="font-size:11px;color:var(--text3);font-family:var(--mono)" id="dash_month">-</span>
+            </div>
+            <div class="dash-grid">
+              <div class="dash-card dash-amocrm-card">
+                <div class="dash-head">
+                  <h4 id="dash_amocrm_t" style="margin:0">amoCRM task diagrammasi</h4>
+                  <span class="dash-pill" id="dash_amocrm_pill">Bo'limlar bo'yicha</span>
+                </div>
+                <div class="dash-amocrm-summary" id="dash_amocrm_summary"></div>
+                <div class="dash-amocrm-chart" id="dash_amocrm_chart">
+                  <div class="dash-empty">Yuklanmoqda...</div>
+                </div>
+                <div class="dash-amocrm-legend" id="dash_amocrm_legend"></div>
+              </div>
+              <div class="dash-card">
+                <div class="dash-head">
+                  <h4 id="dash_work_t" style="margin:0">Davomat holati</h4>
+                  <span class="dash-pill" id="dash_monthly_pill">Monthly</span>
+                </div>
+                <div class="dash-line-wrap">
+                  <div class="dash-line-meta">
+                    <div class="dash-line-summary">
+                      <span class="dash-line-label" id="dash_attendance_label">Davomat</span>
+                      <strong class="dash-line-value" id="dashOverall">0%</strong>
+                      <span class="dash-line-sub" id="dash_work_sub">Oxirgi 7 kun ko'rsatkichi</span>
+                    </div>
+                    <div class="dash-line-stats" id="dash_work_stats">
+                      <div class="dash-mini-stat"><strong>0%</strong><span>O'rtacha</span></div>
+                    </div>
+                  </div>
+                  <div class="dash-line-chart">
+                    <svg id="dash_work_chart" viewBox="0 0 640 190" preserveAspectRatio="none" aria-label="Attendance trend">
+                      <defs>
+                        <linearGradient id="dashLineGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stop-color="rgba(132,72,255,.26)"></stop>
+                          <stop offset="100%" stop-color="rgba(132,72,255,0)"></stop>
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                  <div class="dash-line-labels" id="dash_work_labels"></div>
+                </div>
+              </div>
+              <div class="dash-card dash-bar-card">
+                <div class="dash-head">
+                  <h4 id="dash_late_t" style="margin:0">Hodimlar samaradorligi</h4>
+                  <span style="font-size:11px;color:var(--text3)" id="dash_kpi_t">Oy bo'yicha</span>
+                </div>
+                <div id="dash_late" class="dash-eff-grid">Yuklanmoqda...</div>
+                <div id="dash_kpi" class="dash-empty" style="padding-top:12px"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box pbx-dashboard-widget pbx-dashboard-course-widget">
+            <div class="pbx-widget-head">
+              <span class="btitle pbx-title" id="dash_pbx_course_title"><span data-pbx-icon="BarChart3"></span> Kurs kesimidagi qo'ng'iroqlar</span>
+              <div class="pbx-chart-head-actions">
+                <div class="pbx-chart-metric-tabs" id="dash_pbx_course_metric_buttons"></div>
+                <span id="dash_pbx_course_chart_note" class="pbx-result-count">-</span>
+                <button class="xbtn pbx-detail-btn" onclick="adminTab('pbx')"><span data-pbx-icon="BarChart3"></span><span id="dash_pbx_detail_txt">Batafsil</span></button>
+              </div>
+            </div>
+            <div class="pbx-course-chart pbx-dashboard-course-chart" id="dash_pbx_course_chart">
+              <div class="pbx-loading">Yuklanmoqda...</div>
+            </div>
+          </div>
+          <div class="box">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <span class="btitle" id="att_t" style="margin:0">Hodimlar nazorati</span>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div class="drange" id="att_date_range">
+                  <label id="from_l">Dan:</label>
+                  <input type="date" id="fd_from" onchange="loadAtt()">
+                  <label id="to_l">Gacha:</label>
+                  <input type="date" id="fd_to" onchange="loadAtt()">
+                </div>
+                <button class="bg2" id="b_today" onclick="setToday()">Bugun</button>
+                <button class="bb" id="b_monthly" onclick="toggleMonthly()">Oylik</button>
+              </div>
+            </div>
+            <div class="frow">
+              <input type="text" id="fsearch" placeholder="Qidirish..." oninput="filterAtt()" style="flex:1;min-width:100px;">
+              <select id="fstatus" onchange="filterAtt()">
+                <option value="" id="o_all">Barcha</option>
+                <option value="keldi" id="o_came">Keldi</option>
+                <option value="kechikkan" id="o_late">Kechikkan</option>
+                <option value="kelmadi" id="o_abs">Kelmadi</option>
+              </select>
+              <input type="month" id="fmonth" onchange="onAdminMonthChange()" style="font-size:12px;padding:7px 9px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--input-bg);color:var(--text);">
+              <button class="bg2" id="b_cm" onclick="setCurMonth()">Joriy oy</button>
+              <button class="bb" id="b_ref" onclick="refreshAdminMain()">Yangilash</button>
+            </div>
+            <div class="tbl-wrap">
+              <table class="tbl" style="min-width:720px;">
+                <thead><tr>
+                  <th>#</th><th id="th1">Ism familiya</th><th id="th2">Login</th>
+                  <th id="th4">O'zgartirish</th><th id="th5">Kelgan vaqti</th>
+                  <th id="th_lunch_start">Tushlik boshlagan</th><th id="th_lunch_end">Tushlik tugagan</th>
+                  <th id="th_end">Ish tugagan</th><th id="th7">Ishlagan soat</th>
+                  <th id="th_afk">AFK vaqti</th><th id="th8">Status</th>
+                </tr></thead>
+                <tbody id="att_body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="box hidden" id="mbox">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+              <span class="btitle" id="mth_t" style="margin:0">Oylik hisobot</span>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:11px;color:var(--text3)" id="mlbl"></span>
+                <button class="btn-export" onclick="exportExcel()">📊 Excel</button>
+                <button class="btn-export" onclick="exportPDF()">📄 PDF</button>
+              </div>
+            </div>
+            <div class="mst">
+              <div class="ms"><h5 id="ms1">Hodimlar</h5><div class="v" id="me">0</div></div>
+              <div class="ms"><h5 id="ms2">Kechikishlar</h5><div class="v" id="ml">0</div></div>
+              <div class="ms"><h5 id="ms3">Kelmagan</h5><div class="v" id="ma">0</div></div>
+              <div class="ms"><h5 id="ms4">Ish soati</h5><div class="v" id="mh">0</div></div>
+            </div>
+            <div class="tbl-wrap">
+              <table class="tbl" id="monthly_table" style="min-width:900px;">
+                <thead><tr>
+                  <th>#</th><th id="mt_date">Sana</th><th id="mt1">Ism familiya</th><th id="mt2">Kelgan vaqti</th>
+                  <th id="mt_worked">Ishlagan soat</th><th id="mt_lunch_start">Tushlik boshlagan</th>
+                  <th id="mt_lunch_end">Tushlik tugagan</th><th id="mt_end">Ish tugagan</th>
+                </tr></thead>
+                <tbody id="mbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab_notif" class="hidden">
+          <div class="box">
+            <div class="btitle" id="notif_box_title">🔔 Bildirishnoma yuborish</div>
+            <div class="notif-send-box">
+              <h4 id="ns_title">Hodimga bildirishnoma yuborish</h4>
+              <div class="notif-send-row" style="margin-bottom:8px">
+                <select id="ns_emp" style="max-width:200px;">
+                  <option value="all" id="ns_all">Hammaga</option>
+                </select>
+                <input type="text" id="ns_title_inp" placeholder="Sarlavha...">
+              </div>
+              <div class="notif-send-row">
+                <textarea id="ns_body" placeholder="Xabar matni..." style="min-height:70px;"></textarea>
+              </div>
+              <button class="bb" id="ns_send_btn" style="margin-top:8px;" onclick="adminSendNotif()">📤 Yuborish</button>
+            </div>
+            <div class="btitle" id="notif_sent_title" style="margin-top:16px">📋 Yuborilgan bildirishnomalar</div>
+            <div id="notif_list_admin"></div>
+          </div>
+        </div>
+
+        <div id="tab_feedback" class="hidden">
+          <div class="box">
+            <div class="btitle" id="feedback_admin_title">💬 Hodimlar fikr va shikoyatlari</div>
+            <div class="frow" style="margin-bottom:12px">
+              <select id="fb_filter" onchange="loadFeedbackAdmin()">
+                <option value="" id="fb_filter_all">Barcha</option>
+                <option value="new" id="fb_filter_new">Yangi</option>
+                <option value="replied" id="fb_filter_replied">Javob berilgan</option>
+                <option value="complaint" id="fb_filter_complaint">Shikoyat</option>
+                <option value="suggestion" id="fb_filter_suggestion">Taklif</option>
+              </select>
+              <button class="bg2" id="fb_filter_refresh_btn" onclick="loadFeedbackAdmin()">Yangilash</button>
+            </div>
+            <div id="feedback_list_admin">
+              <div class="sk-line skeleton"></div>
+              <div class="sk-line skeleton short"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab_settings" class="hidden">
+          <div class="box">
+            <div class="btitle">⚙️ <span id="set_t">Hodimlar boshqaruvi</span></div>
+            <div class="sf">
+              <input type="text" id="ne_n" placeholder="Ism familiya">
+              <input type="email" id="ne_l" placeholder="Email">
+              <input type="password" id="ne_p" placeholder="Parol">
+              <button class="bb" id="b_addemp" onclick="addEmp()">Qo'shish</button>
+            </div>
+            <div class="tbl-wrap">
+              <table class="tbl" style="min-width:620px;">
+                <thead><tr><th>#</th><th id="et1">Ism familiya</th><th id="et2">Login</th><th id="et3">Parol</th><th>Yuz</th><th id="et5">O'chirish</th></tr></thead>
+                <tbody id="emp_body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="box">
+            <div class="btitle">🌐 <span id="ip_t">Ruxsat etilgan IP manzillar</span></div>
+            <div class="sf">
+              <input type="text" id="ip_inp" placeholder="192.168.1.100" style="flex:1;">
+              <button class="bb" id="b_addip" onclick="addAllowedIP()">IP qo'shish</button>
+              <button class="bg2" id="b_myip" onclick="addMyIP()">Mening IP</button>
+            </div>
+            <p style="font-size:11.5px;color:var(--text2);margin-bottom:8px">Joriy IP: <strong id="my_ip_show" style="font-family:var(--mono)">...</strong></p>
+            <div id="ip_list" style="font-size:12px;color:var(--text2)">Yuklanmoqda...</div>
+          </div>
+          <div class="box">
+            <div class="btitle">📍 GPS hudud</div>
+            <div class="sf">
+              <input type="number" id="gps_lat" placeholder="Latitude" step="0.000001">
+              <input type="number" id="gps_lng" placeholder="Longitude" step="0.000001">
+              <input type="number" id="gps_radius" placeholder="Radius (metr)" min="10" step="10">
+              <button class="bb" onclick="saveGPSRegion()">Saqlash</button>
+              <button class="bg2" onclick="fillCurrentGPS()">Mening joylashuvim</button>
+            </div>
+            <div class="sf" style="margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
+                <input type="checkbox" id="gps_enabled">
+                GPS cheklovni yoqish
+              </label>
+            </div>
+            <p style="font-size:11.5px;color:var(--text2);margin-top:8px">Joriy GPS: <strong id="gps_now_show" style="font-family:var(--mono)">aniqlanmagan</strong></p>
+            <p style="font-size:11.5px;color:var(--text2)" id="gps_saved_info">GPS cheklov o'chirilgan</p>
+          </div>
+          <div class="box">
+            <div class="btitle"><span id="face_control_title">Yuz nazorati</span></div>
+            <div class="face-control-card">
+              <div class="face-control-copy">
+                <strong id="face_control_label">Face aniqlash bilan ishlash</strong>
+                <span id="face_control_desc">Yoqilganida hodim ish boshlaganda kamera orqali yuz nazorati ishlaydi. O'chirilganida ish vaqti yuz tekshiruvisiz boshlanadi.</span>
+                <div class="face-control-state" id="face_control_state">Yuklanmoqda...</div>
+              </div>
+              <label class="face-control-toggle">
+                <input type="checkbox" id="face_control_enabled" onchange="saveFaceControlToggle()">
+                <span id="face_control_switch_label">Yoqish</span>
+              </label>
+            </div>
+          </div>
+          <div class="box">
+            <div class="btitle">📅 <span id="hol_t">Dam olish kunlari</span></div>
+            <div class="sf">
+              <input type="date" id="hol_d">
+              <button class="bb" id="b_addh" onclick="addHol()">Qo'shish</button>
+            </div>
+            <p style="font-size:11.5px;color:var(--text2);margin-bottom:4px" id="hol_info">Standart: Du–Sha. Yakshanba avtomatik dam olish.</p>
+            <p style="font-size:11.5px;color:var(--text2)" id="hol_list">Qo'shimcha dam olish kuni yo'q</p>
+          </div>
+          <div class="box">
+            <div class="btitle">🧳 <span id="leave_manage_title">Ish ta'tilini belgilash</span></div>
+            <div class="sf">
+              <select id="leave_emp" style="min-width:220px;">
+                <option value="" id="leave_emp_placeholder">Hodimni tanlang</option>
+              </select>
+              <input type="date" id="leave_start">
+              <input type="date" id="leave_return">
+              <button class="bb" id="leave_add_btn" onclick="addEmployeeLeave()">Belgilash</button>
+            </div>
+            <div class="tbl-wrap" style="margin-top:12px;">
+              <table class="tbl" style="min-width:620px;">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th id="leave_admin_th_employee">Xodim</th>
+                    <th id="leave_admin_th_start">Boshlanish</th>
+                    <th id="leave_admin_th_return">Qaytish</th>
+                    <th id="leave_admin_th_status">Holat</th>
+                    <th id="leave_admin_th_action">O'chirish</th>
+                  </tr>
+                </thead>
+                <tbody id="leave_admin_body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="tab_amocrm" class="hidden">
+          <div id="amocrm_error" class="amocrm-error hidden"></div>
+          <div class="scards amocrm-summary-grid">
+            <div class="scard amocrm-summary-card"><h4 id="amocrm_card_active">Jami faol vazifalar</h4><div class="snum" id="amocrm_total_active">-</div></div>
+            <div class="scard amocrm-summary-card"><h4 id="amocrm_card_overdue">Muddati o'tgan</h4><div class="snum" id="amocrm_total_overdue">-</div></div>
+            <div class="scard amocrm-summary-card"><h4 id="amocrm_card_on_time_active">Hali muddati o'tmagan</h4><div class="snum" id="amocrm_total_on_time_active">-</div></div>
+          </div>
+          <div class="box">
+            <div class="amocrm-toolbar">
+              <span class="btitle" id="amocrm_stats_title" style="margin:0">Bo'limlar bo'yicha amoCRM tasklari</span>
+              <button class="bb" id="amocrm_refresh_btn" onclick="loadAmoCrmDepartmentCounts()">Yangilash</button>
+            </div>
+            <div id="amocrm_table_note" class="amocrm-table-note"></div>
+            <div id="amocrm_department_grid" class="amocrm-dept-grid"></div>
+            <div id="amocrm_empty" class="amocrm-empty hidden">amoCRM task ma'lumotlari topilmadi</div>
+            <div id="amocrm_last_updated" style="color:var(--text3);font-family:var(--mono);font-size:12px;margin-top:12px;">-</div>
+          </div>
+        </div>
+
+        <div id="tab_pbx" class="hidden">
+          <div class="box pbx-page-head">
+            <div>
+              <div class="btitle pbx-title" id="pbx_page_title"><span data-pbx-icon="PhoneCall"></span> PBX qo'ng'iroqlari</div>
+              <p class="pbx-subtitle" id="pbx_page_subtitle">OnlinePBX ma'lumotlari faqat Supabase Edge Function orqali yuklanadi.</p>
+            </div>
+            <div class="pbx-head-actions">
+              <div class="pbx-date-picker" id="pbx_date_picker">
+                <button type="button" class="pbx-calendar-toggle" id="pbx_date_trigger" onclick="togglePbxCalendar()" aria-label="Sana filtri" aria-expanded="false">
+                  <span data-pbx-icon="Calendar"></span>
+                </button>
+                <div class="pbx-calendar-popover" id="pbx_calendar_popover">
+                  <div class="pbx-range-title">
+                    <strong id="pbx_range_text">Bugungi kun</strong>
+                    <span id="pbx_range_hint">Sana tanlang</span>
+                  </div>
+                  <div class="pbx-range-presets">
+                    <button type="button" onclick="setPbxDatePreset('today')">Bugun</button>
+                    <button type="button" onclick="setPbxDatePreset('last_week')">Oxirgi hafta</button>
+                    <button type="button" onclick="setPbxDatePreset('previous_week')">Oldingi hafta</button>
+                    <button type="button" onclick="setPbxDatePreset('current_month')">Joriy oy</button>
+                    <button type="button" onclick="setPbxDatePreset('last_month')">Oxirgi oy</button>
+                  </div>
+                  <div class="pbx-calendar" id="pbx_calendar">
+                    <div class="pbx-calendar-head">
+                      <button type="button" class="pbx-cal-nav" onclick="movePbxCalendar(-1)" aria-label="Oldingi oy"><span data-pbx-icon="ChevronLeft"></span></button>
+                      <strong id="pbx_calendar_title">-</strong>
+                      <button type="button" class="pbx-cal-nav" onclick="movePbxCalendar(1)" aria-label="Keyingi oy"><span data-pbx-icon="ChevronRight"></span></button>
+                    </div>
+                    <div class="pbx-weekdays">
+                      <span>Du</span><span>Se</span><span>Ch</span><span>Pa</span><span>Ju</span><span>Sh</span><span>Ya</span>
+                    </div>
+                    <div class="pbx-calendar-grid" id="pbx_calendar_grid"></div>
+                  </div>
+                  <div class="pbx-filter-actions">
+                    <button class="bb" id="pbx_apply_btn" onclick="applyPbxFilters()"><span data-pbx-icon="Search"></span> Qidirish</button>
+                    <button class="bg2" id="pbx_clear_btn" onclick="clearPbxFilters()"><span data-pbx-icon="RotateCcw"></span> Tozalash</button>
+                  </div>
+                </div>
+                <input type="hidden" id="pbx_date_from">
+                <input type="hidden" id="pbx_date_to">
+                <input type="hidden" id="pbx_phone">
+                <input type="hidden" id="pbx_course" value="all">
+                <input type="hidden" id="pbx_direction" value="all">
+                <input type="hidden" id="pbx_status" value="all">
+              </div>
+              <span class="dash-pill" id="pbx_loaded_at">Bugungi ko'rinish</span>
+            </div>
+          </div>
+
+          <div class="box pbx-responsibles-box">
+            <div class="pbx-table-head">
+              <span class="btitle pbx-title" id="pbx_responsibles_title"><span data-pbx-icon="Headphones"></span> Kurs mas'ullari</span>
+              <span id="pbx_result_count" class="pbx-result-count">amoCRM mas'ulliklari</span>
+            </div>
+            <div class="pbx-responsibles-grid" id="pbx_responsibles_grid"></div>
+          </div>
+
+          <div class="pbx-summary-grid">
+            <div class="pbx-stat-card" data-tone="total"><span data-pbx-icon="Phone"></span><small>Barchasi</small><strong id="pbx_stat_total">-</strong></div>
+            <div class="pbx-stat-card" data-tone="incoming"><span data-pbx-icon="PhoneIncoming"></span><small>Kiruvchi</small><strong id="pbx_stat_incoming">-</strong></div>
+            <div class="pbx-stat-card" data-tone="outgoing"><span data-pbx-icon="PhoneOutgoing"></span><small>Chiquvchi</small><strong id="pbx_stat_outgoing">-</strong></div>
+            <div class="pbx-stat-card" data-tone="outside-work"><span data-pbx-icon="Clock"></span><small>Ishdan tashqari qo'ng'iroqlar</small><strong id="pbx_stat_outside_work">-</strong></div>
+            <div class="pbx-stat-card" data-tone="missed"><span data-pbx-icon="PhoneMissed"></span><small>Yetib bormagan</small><strong id="pbx_stat_missed">-</strong></div>
+            <div class="pbx-stat-card" data-tone="not-called"><span data-pbx-icon="RotateCcw"></span><small>Qayta qo'ng'iroq qilinmagan</small><strong id="pbx_stat_not_called_back">-</strong></div>
+            <div class="pbx-stat-card" data-tone="unknown"><span data-pbx-icon="HelpCircle"></span><small>Aniqlanmadi</small><strong id="pbx_stat_unknown">-</strong></div>
+            <div class="pbx-stat-card" data-tone="quality"><span data-pbx-icon="Headphones"></span><small>Baholangan</small><strong id="pbx_stat_with_quality_score">-</strong></div>
+          </div>
+
+          <div id="pbx_status_message" class="pbx-state-message hidden"></div>
+
+          <div class="box pbx-course-chart-box">
+            <div class="pbx-table-head">
+              <span class="btitle pbx-title" id="pbx_course_chart_title"><span data-pbx-icon="BarChart3"></span> Kurs kesimidagi qo'ng'iroqlar</span>
+              <div class="pbx-chart-head-actions">
+                <div class="pbx-chart-metric-tabs" id="pbx_course_metric_buttons"></div>
+                <span id="pbx_course_chart_note" class="pbx-result-count">-</span>
+              </div>
+            </div>
+            <div class="pbx-course-chart" id="pbx_course_chart"></div>
+            <div class="pbx-hour-section">
+              <div class="pbx-table-head">
+                <span class="btitle pbx-title" id="pbx_hour_chart_title"><span data-pbx-icon="Clock"></span> Soat bo'yicha qo'ng'iroqlar</span>
+                <span id="pbx_hour_chart_note" class="pbx-result-count">-</span>
+              </div>
+              <div class="pbx-hour-chart" id="pbx_hour_chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="employeePage">
+  <div class="ehdr">
+    <div class="ehdr-brand">
+      <img src="images/logo2.png" alt="" style="width:30px;height:30px;object-fit:contain;" onerror="this.style.display='none'">
+      <span class="ehdr-brand-name">Aloqa<span>Pro</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+      <span style="color:rgba(255,255,255,.6);font-size:11px;font-family:var(--mono);background:rgba(255,255,255,.07);padding:4px 8px;border-radius:6px;" id="empDate"></span>
+      <label class="theme-toggle"><input type="checkbox" id="themeToggle3" onchange="toggleTheme()"><span class="theme-slider"></span></label>
+      <div class="lsw">
+        <button class="lb active" id="el_uz" onclick="setLang('uz')"><span class="flag"><svg viewBox="0 0 34 22"><rect width="34" height="7.33" fill="#1EB3E4"/><rect y="7.33" width="34" height="7.34" fill="#fff"/><rect y="14.67" width="34" height="7.33" fill="#32A84C"/><rect y="6.9" width="34" height=".8" fill="#CE2028"/><rect y="14.3" width="34" height=".8" fill="#CE2028"/><circle cx="9" cy="3.7" r="2.3" fill="#fff"/><circle cx="10.1" cy="3.7" r="2.3" fill="#1EB3E4"/></svg></span></button>
+        <span class="lsep"></span>
+        <button class="lb" id="el_ru" onclick="setLang('ru')"><span class="flag"><svg viewBox="0 0 34 22"><rect width="34" height="7.33" fill="#fff"/><rect y="7.33" width="34" height="7.34" fill="#1C3F94"/><rect y="14.67" width="34" height="7.33" fill="#CE2028"/></svg></span></button>
+      </div>
+      <button class="xbtn" onclick="empNavTab('work')"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2v16"/><path d="M12 12h.01"/></svg></span></button>
+      <button class="xbtn" onclick="empNavTab('notif')"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-ring-icon lucide-bell-ring"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/></svg></span> <span id="empNotifBadge" class="notif-badge hidden">0</span></button>
+      <button class="xbtn" onclick="empNavTab('feedback')"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg></span></button>
+      <button class="xbtn" id="empExit" onclick="doLogout()">Chiqish</button>
+    </div>
+  </div>
+
+  <!-- Mobil uchun pastki navigatsiya -->
+  <div class="emp-bottom-nav" id="empBottomNav">
+    <button class="ebn-btn active" id="ebn_work" onclick="empNavTab('work')"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2v16"/><path d="M12 12h.01"/></svg></span><span id="emp_work_tab_lbl">Ish</span></button>
+    <button class="ebn-btn" id="ebn_notif" onclick="empNavTab('notif')"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-ring-icon lucide-bell-ring"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/></svg></span><span><span id="emp_notif_tab_lbl">Xabar</span> <span id="empNotifBadge2" class="notif-badge hidden">0</span></span></button>
+    <button class="ebn-btn" id="ebn_feedback" onclick="empNavTab('feedback')"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg></span><span id="emp_feedback_tab_lbl">Fikr</span></button>
+    <button class="ebn-btn" onclick="doLogout()"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M13 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8"/></svg></span><span id="emp_logout_tab_lbl">Chiqish</span></button>
+  </div>
+
+  <div id="emp_tab_work">
+    <div class="ebody">
+      <div class="ec">
+        <h2 id="ew_t">Bugungi ish jarayoni</h2>
+        <div class="tags">
+          <span class="tag tb" id="e_mtag">2026-04</span>
+          <span class="tag tg" id="e_stag">Holat: Boshlanmagan</span>
+          <span class="tag to" id="e_ltag">Kechikish: 0 daqiqa</span>
+        </div>
+        <div class="abtns">
+          <button class="abtn ast" id="bs" onclick="empStart()">Boshlash</button>
+          <button class="abtn alu" id="bl" onclick="empLunch()">Tushlik</button>
+          <button class="abtn apr" id="bp" onclick="empPrayer()">Namoz</button>
+          <button class="abtn aen" id="be" onclick="empEnd()">Yakunlash</button>
+        </div>
+        <button class="aco hidden" id="bc" onclick="empContinue()">Davom ettirish</button>
+        <div class="tgrid">
+          <div class="tb2"><h4 id="ewl">Ish vaqti</h4><div class="tv" id="tw">00:00:00</div></div>
+          <div class="tb2"><h4 id="ell">Tushlik</h4><div class="tv" id="tl">00:00:00</div></div>
+          <div class="tb2"><h4 id="eprl">Namoz</h4><div class="tv" id="tp">00:00:00</div></div>
+        </div>
+        <div class="break-tracker" id="prayerTracker" style="margin-bottom:8px;background:rgba(165,94,234,.06);border-color:rgba(165,94,234,.25)">
+          <h4 id="prayer_next_lbl">🕌 Keyingi namoz vaqti</h4>
+          <div class="break-info" style="margin-top:6px">
+            <span id="nextPrayerName">—</span>
+            <span id="nextPrayerTime" style="color:var(--purple);font-family:var(--mono)">--:--</span>
+          </div>
+        </div>
+        <div class="break-tracker" id="breakTracker">
+          <h4>☕ Tanaffus limiti (kun)</h4>
+          <div class="break-bar-wrap"><div class="break-bar" id="breakBar" style="width:0%"></div></div>
+          <div class="break-info">
+            <span id="breakUsed">0 daq</span>
+            <span id="breakLimit" style="color:var(--warn)">/ 30 daq</span>
+          </div>
+        </div>
+        <div class="afk-box" id="afkBox">
+          <h4 id="afk_lbl">⚠️ Joyida bo'lmagan vaqt</h4>
+          <div class="afk-total" id="afk_display">00:00:00</div>
+          <div class="afk-count" id="afk_cnt_lbl">0 marta AFK</div>
+          <div class="afk-break-ok hidden" id="afk_break_ok">✅ Tanaffus limiti ichida</div>
+        </div>
+      </div>
+
+      <div class="ec">
+        <h2 id="et_t">Bugungi ma'lumot</h2>
+        <div class="igrid">
+          <div class="ii"><h4 id="ei1">Ish boshlagan</h4><p id="i_s">-</p></div>
+          <div class="ii"><h4 id="ei2">Ish tugagan</h4><p id="i_e">-</p></div>
+          <div class="ii"><h4 id="ei3">Tushlik boshlangan</h4><p id="i_ls">-</p></div>
+          <div class="ii"><h4 id="ei4">Tushlik tugagan</h4><p id="i_le">-</p></div>
+          <div class="ii"><h4 id="ei5">Namoz boshlangan</h4><p id="i_ps">-</p></div>
+          <div class="ii"><h4 id="ei6">Namoz tugagan</h4><p id="i_pe">-</p></div>
+        </div>
+        <div style="margin-top:10px;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:5px;font-weight:600" id="face_info_lbl">📷 Yuz nazorati</div>
+          <div id="face_status_inline" style="font-size:12.5px;font-weight:700;">⏳ Yuklanmoqda...</div>
+          <div class="face-reg-box" id="faceRegBox" style="margin-top:8px;display:none;">
+            <h4 id="face_reg_title">🎯 Yuzni ro'yxatdan o'tkazish</h4>
+            <div class="face-samples" id="faceSamples"></div>
+            <div class="face-quality" id="faceQuality">0/5 namuna olindi</div>
+            <div class="liveness-indicator">
+              <div class="liveness-dot" id="livenessDot"></div>
+              <span id="livenessText">Liveness tekshirilmoqda...</span>
+            </div>
+            <button class="fw-reg-btn" id="faceRegBtn" onclick="startFaceRegistration()" style="font-size:12px;padding:8px;">📸 Ro'yxatdan o'tish</button>
+          </div>
+        </div>
+        <p class="note" style="margin-top:8px" id="e_note">Yangi kun boshlanganida vaqtlar 0 ga tushadi.</p>
+      </div>
+
+      <div class="ec efw">
+        <div class="mhdr">
+          <h2 id="eh_t">Oy bo'yicha tarix</h2>
+          <div class="mflt">
+            <input type="month" id="e_month" onchange="loadHist()">
+            <button class="bg2" id="e_cm" onclick="setEmpMonth()">Joriy oy</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl" style="min-width:660px;">
+            <thead><tr>
+              <th>#</th><th id="ht1">Sana</th><th id="ht2">Boshlagan</th>
+              <th id="ht3">Tushlik bosh.</th><th id="ht4">Tushlik tug.</th>
+              <th id="ht5">Tugagan</th><th id="ht6">Kechikish</th>
+              <th id="ht7">Ish vaqti</th><th id="ht8">Tushlik</th>
+              <th id="ht_afk">AFK</th><th id="ht9">Status</th>
+            </tr></thead>
+            <tbody id="hbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;">
+          <div><div style="font-size:11px;color:var(--text2)" id="el_lbl">Kechikishlar (oy):</div><div style="font-size:20px;font-weight:800;margin-top:4px;font-family:var(--mono)" id="e_lc">0</div></div>
+          <div><div style="font-size:11px;color:var(--text2)" id="afk_month_lbl">AFK (oy jami):</div><div style="font-size:20px;font-weight:800;margin-top:4px;color:var(--danger);font-family:var(--mono)" id="e_afk_total">0 daqiqa</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="emp_tab_notif" class="hidden" style="padding:16px">
+    <div class="box">
+      <div class="btitle">🔔 Bildirishnomalar</div>
+      <button class="push-notif-btn" id="enablePushBtn" onclick="requestPushPermission()">🔔 Push bildirishnomalarni yoqish</button>
+      <div id="notif_list_emp"></div>
+    </div>
+  </div>
+
+  <div id="emp_tab_feedback" class="hidden" style="padding:16px">
+    <div class="box">
+      <div class="btitle">💬 Fikr/Shikoyat yuborish</div>
+      <div class="sf" style="flex-direction:column;align-items:stretch">
+        <select id="fb_type" style="padding:9px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--input-bg);color:var(--text);font-family:var(--font);">
+          <option value="suggestion">💡 Taklif</option>
+          <option value="complaint">⚠️ Shikoyat</option>
+          <option value="other">📝 Boshqa</option>
+        </select>
+        <textarea id="fb_msg" placeholder="Xabaringizni yozing..." style="padding:10px;background:var(--input-bg);border:1.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:13px;resize:vertical;min-height:100px;outline:none;margin-top:8px;"></textarea>
+        <button class="bb" style="margin-top:8px;width:fit-content" onclick="sendFeedback()">📤 Yuborish</button>
+      </div>
+      <div style="margin-top:16px">
+        <div class="btitle">📋 Mening fikrlarim</div>
+        <div id="my_feedback_list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="faceWidget" class="hidden">
+  <div class="fw-title">
+    <span>📷 Yuz nazorati</span>
+    <button class="fw-minimize" onclick="toggleFaceWidget()">—</button>
+  </div>
+  <div class="fw-video-wrap">
+    <video id="faceVideo" autoplay muted playsinline></video>
+    <canvas id="faceCanvas" style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
+  </div>
+  <div class="fw-status">
+    <div class="fw-dot gray" id="faceDot"></div>
+    <span class="fw-txt" id="faceTxt">Yuklanmoqda...</span>
+  </div>
+  <div class="fw-timer hidden" id="afkTimer">⏱ AFK: <span id="afkTimerVal">00:00</span></div>
+  <div class="fw-afk" id="afkTotalWidget">Jami AFK: 0 daq</div>
+  <div class="liveness-indicator" id="livenessWidget" style="margin-top:4px">
+    <div class="liveness-dot" id="livenessWidgetDot"></div>
+    <span id="livenessWidgetTxt" style="font-size:10px;color:var(--text3)">Liveness...</span>
+  </div>
+</div>
+
+<div class="ov hidden" id="m_welcome">
+  <div class="modal">
+    <p id="mw_txt">Eslatma: "Yakunlash" tugmasini faqat ish kuni to'liq tugagandan keyin bosing!</p>
+    <button class="msingle" id="mw_ok" onclick="closeWelcome()">OK</button>
+  </div>
+</div>
+<div class="ov hidden" id="m_ep">
+  <div class="modal">
+    <h3 id="mep_t" style="color:var(--accent)">Parolni o'zgartirish</h3>
+    <input type="hidden" id="ep_id">
+    <div class="iw" style="margin:14px 0">
+      <input type="password" id="ep_np" placeholder="Yangi parol" style="background:var(--input-bg);color:var(--text)">
+    </div>
+    <div class="mbtns">
+      <button class="mok" id="mep_s" onclick="savePass()">Saqlash</button>
+      <button class="mno" id="mep_c" onclick="closeEP()">Bekor</button>
+    </div>
+  </div>
+</div>
+<div class="ov hidden" id="m_month_att_detail">
+  <div class="modal modal-wide">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div>
+        <h3 id="month_att_detail_title" style="color:var(--accent);margin-bottom:6px;">Davomat tafsiloti</h3>
+        <p id="month_att_detail_subtitle" style="margin:0;color:var(--text3);"></p>
+      </div>
+      <button class="mno" onclick="closeMonthlyAttendanceDetails()" id="month_att_detail_close">Yopish</button>
+    </div>
+    <div id="month_att_detail_body"></div>
+  </div>
+</div>
+<div class="ov hidden" id="m_work_leave">
+  <div class="modal modal-wide">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div>
+        <h3 id="work_leave_title" style="color:var(--accent);margin-bottom:6px;">Ish ta'tilidagi xodimlar</h3>
+        <p id="work_leave_subtitle" style="margin:0;color:var(--text3);"></p>
+      </div>
+      <button class="mno" onclick="closeWorkLeaveModal()" id="work_leave_close">Yopish</button>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl" style="min-width:760px;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th id="work_leave_th_employee">Xodim</th>
+            <th id="work_leave_th_start">Ish ta'tili boshlangan sana</th>
+            <th id="work_leave_th_return">Qaytish sanasi</th>
+            <th id="work_leave_th_status">Holat</th>
+          </tr>
+        </thead>
+        <tbody id="work_leave_body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="ov hidden afk-modal-border" id="m_afk_warn">
+  <div class="modal">
+    <h3 style="color:var(--danger)" id="afk_warn_title">⚠️ Yuzingiz aniqlanmadi!</h3>
+    <p id="afk_warn_txt" style="color:var(--text2);font-weight:500;">Kamera oldida o'tiring.</p>
+    <div class="countdown" id="afk_countdown">05:00</div>
+    <p style="font-size:11px;color:var(--text3)" id="afk_warn_sub">5 daqiqa ichida yuz aniqlanmasa, AFK hisoblanadi</p>
+    <button class="mok" onclick="dismissAfkWarn()" id="afk_im_here">Men shu yerdaman ✋</button>
+  </div>
+</div>
+<div class="ov hidden" id="m_auto_end">
+  <div class="modal">
+    <h3 style="color:var(--success)">✅ Ish yakunlandi</h3>
+    <p id="auto_end_txt" style="color:var(--text2)">Soat 18:00 bo'ldi. Tizim tomonidan ish yakunlandi.</p>
+    <button class="msingle" onclick="document.getElementById('m_auto_end').classList.add('hidden')">OK</button>
+  </div>
+</div>
+<div class="ov hidden" id="m_lunch_shift">
+  <div class="modal">
+    <h3 style="color:var(--warn)" id="lunch_shift_title">🍽️ Abed smenasini tanlang</h3>
+    <p id="lunch_shift_text">Bugun abedni qaysi smenada qilasiz?</p>
+    <div class="mbtns">
+      <button class="mok" onclick="saveLunchShiftChoice('shift_1')" id="lunch_shift_btn_1">1-smena</button>
+      <button class="msingle" onclick="saveLunchShiftChoice('shift_2')" id="lunch_shift_btn_2">2-smena</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/app-parts/01-core.js" defer></script>
+<script src="assets/js/app-parts/02-access-settings.js" defer></script>
+<script src="assets/js/app-parts/03-translations.js" defer></script>
+<script src="assets/js/app-parts/04-time-attendance-utils.js" defer></script>
+<script src="assets/js/app-parts/05-notifications-feedback-login.js" defer></script>
+<script src="assets/js/app-parts/06-admin-pbx.js" defer></script>
+<script src="assets/js/app-parts/07-export-employee-state-actions.js" defer></script>
+<script src="assets/js/app-parts/08-timers-prayer-autoend.js" defer></script>
+<script src="assets/js/app-parts/09-face-detection.js" defer></script>
+<script src="assets/js/app-parts/10-employee-ui-init.js" defer></script>
+</body>
+</html>
