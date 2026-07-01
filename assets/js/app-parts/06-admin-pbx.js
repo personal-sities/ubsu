@@ -1541,8 +1541,8 @@ function renderDashboardCharts(rows,workDays,empCount,recs=[]){
       chart.innerHTML = `
         <defs>
           <linearGradient id="dashLineGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="rgba(132,72,255,.26)"></stop>
-            <stop offset="100%" stop-color="rgba(132,72,255,0)"></stop>
+            <stop offset="0%" stop-color="rgba(11,78,162,.26)"></stop>
+            <stop offset="100%" stop-color="rgba(11,78,162,0)"></stop>
           </linearGradient>
         </defs>
         <polyline class="dash-line-area" points="${area}"></polyline>
@@ -2095,6 +2095,29 @@ function openMonthlyAttendanceDetails(employeeId){
 }
 function closeMonthlyAttendanceDetails(){document.getElementById('m_month_att_detail').classList.add('hidden');}
 
+function showAdminBusy(messageKey){
+  let overlay=document.getElementById('adminBusyOverlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='adminBusyOverlay';
+    overlay.className='admin-busy-overlay hidden';
+    overlay.innerHTML=`
+      <div class="admin-busy-card" role="status" aria-live="polite">
+        <span class="admin-busy-spinner"></span>
+        <strong id="adminBusyText"></strong>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+  const text=document.getElementById('adminBusyText');
+  if(text)text.textContent=t(messageKey);
+  overlay.classList.remove('hidden');
+}
+function hideAdminBusy(){
+  const overlay=document.getElementById('adminBusyOverlay');
+  if(overlay)overlay.classList.add('hidden');
+}
+
 async function loadEmpList() {
   const { data: emps, error } = await sb
     .from('employees')
@@ -2146,6 +2169,7 @@ async function delEmp(id) {
   if (!id) return;
   if (!confirm(t('del_c'))) return;
 
+  showAdminBusy('employee_deleting_wait');
   try {
     const { data: sessData, error: sessErr } = await sb.auth.getSession();
     if (sessErr || !sessData?.session?.access_token) {
@@ -2180,6 +2204,8 @@ async function delEmp(id) {
   } catch (e) {
     console.error('delEmp error:', e);
     toast('error', t('error_title'), e.message || t('employee_remove_error'));
+  } finally {
+    hideAdminBusy();
   }
 }
 async function addEmp() {
@@ -2191,6 +2217,7 @@ async function addEmp() {
     return;
   }
 
+  showAdminBusy('employee_adding_wait');
   try {
     const { data: userData, error: userErr } = await sb.auth.getUser();
     if (userErr || !userData?.user) {
@@ -2245,6 +2272,8 @@ async function addEmp() {
   } catch (e) {
     console.error('addEmp CATCH ERROR:', e);
     toast('error', t('error_title'), e.message || t('system_error'));
+  } finally {
+    hideAdminBusy();
   }
 }
 function addHol(){const d=document.getElementById('hol_d').value;if(!d)return;const h=JSON.parse(localStorage.getItem('aloqa_hols')||'[]');if(!h.includes(d))h.push(d);localStorage.setItem('aloqa_hols',JSON.stringify(h));document.getElementById('hol_d').value='';updateHolList();}
@@ -2260,6 +2289,7 @@ async function savePass() {
     return;
   }
 
+  showAdminBusy('password_updating_wait');
   try {
     const { data: sessData, error: sessErr } = await sb.auth.getSession();
     if (sessErr || !sessData?.session?.access_token) {
@@ -2298,6 +2328,8 @@ async function savePass() {
   } catch (err) {
     console.error('savePass error:', err);
     toast('error', t('error_title'), err.message || t('password_update_error'));
+  } finally {
+    hideAdminBusy();
   }
 }
 // ============================================================
