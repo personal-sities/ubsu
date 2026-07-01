@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
 :root {
-  --accent: #8448ff;
+  --accent: #0b4ea2;
   --accent2: #06d6a0;
   --danger: #ff4757;
   --warn: #ffa502;
   --success: #2ed573;
-  --purple: #a55eea;
+  --purple: #1d4ed8;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 10px 28px rgba(31,36,51,.06);
@@ -35,12 +35,12 @@
   --skeleton: linear-gradient(90deg, #1d2d3e 25%, #243444 50%, #1d2d3e 75%);
   --toast-bg: #1f2f42;
   --sidebar-text: #c8d8e8;
-  --sidebar-active: rgba(74,140,245,.25);
+  --sidebar-active: rgba(11,78,162,.28);
   --sidebar-hover: rgba(255,255,255,.06);
   --shadow: 0 14px 34px rgba(0,0,0,.28);
   --shadow-lg: 0 20px 56px rgba(0,0,0,.38);
-  --pill-bg: rgba(132,72,255,.16);
-  --pill-border: rgba(132,72,255,.28);
+  --pill-bg: rgba(11,78,162,.18);
+  --pill-border: rgba(11,78,162,.32);
   --panel-soft: rgba(255,255,255,.04);
   --chart-grid-line: rgba(255,255,255,.06);
   --bar-track: #223246;
@@ -62,14 +62,14 @@
   --card2: #f8fafc;
   --header: #ffffff;
   --input-bg: #fff;
-  --hover: rgba(132,72,255,.04);
+  --hover: rgba(11,78,162,.04);
   --skeleton: linear-gradient(90deg, #e0e8f0 25%, #edf3f9 50%, #e0e8f0 75%);
   --toast-bg: #ffffff;
   --sidebar-text: #626b7a;
-  --sidebar-active: rgba(132,72,255,.10);
-  --sidebar-hover: rgba(132,72,255,.06);
+  --sidebar-active: rgba(11,78,162,.10);
+  --sidebar-hover: rgba(11,78,162,.06);
   --pill-bg: #f1f5ff;
-  --pill-border: rgba(132,72,255,.08);
+  --pill-border: rgba(11,78,162,.10);
   --panel-soft: rgba(255,255,255,.45);
   --chart-grid-line: rgba(31,36,51,.05);
   --bar-track: #f0f0f3;
@@ -137,13 +137,19 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 @keyframes slideIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
 @keyframes slideOut { from{transform:translateX(0);opacity:1} to{transform:translateX(120%);opacity:0} }
 
+.admin-busy-overlay { position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center; padding:18px; background:rgba(15,25,35,.42); backdrop-filter:blur(5px); }
+.admin-busy-overlay.hidden { display:none; }
+.admin-busy-card { min-width:280px; max-width:380px; width:min(100%,380px); display:flex; flex-direction:column; align-items:center; gap:16px; padding:26px 24px; border-radius:14px; background:var(--card); border:1px solid var(--border2); box-shadow:var(--shadow-lg); text-align:center; animation:modalIn .24s ease; }
+.admin-busy-card strong { color:var(--text); font-size:14px; line-height:1.5; font-weight:800; }
+.admin-busy-spinner { width:42px; height:42px; border-radius:50%; border:4px solid rgba(11,78,162,.16); border-top-color:var(--accent); animation:spin .8s linear infinite; }
+
 #loginPage { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); padding:16px; position:relative; overflow:hidden; }
-#loginPage::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(132,72,255,.10), transparent); pointer-events:none; }
+#loginPage::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(11,78,162,.10), transparent); pointer-events:none; }
 .lp-lang { position:fixed; top:14px; right:14px; z-index:999; display:flex; align-items:center; gap:8px; }
 .logo-blk { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; max-width:420px; min-height:280px; margin-bottom:-6px; position:relative; z-index:1; }
 .logo-stack { position:relative; display:flex; align-items:center; justify-content:center; }
-.logo-badge { position:absolute; left:50%; top:-14px; transform:translateX(-50%); width:96px; height:96px; object-fit:contain; filter:drop-shadow(0 10px 24px rgba(132,72,255,.22)); }
-.logo-img-main { width:420px; max-width:100%; height:260px; object-fit:contain; filter:drop-shadow(0 12px 34px rgba(132,72,255,.28)); animation:logoFloat 3s ease-in-out infinite; }
+.logo-badge { position:absolute; left:50%; top:-14px; transform:translateX(-50%); width:96px; height:96px; object-fit:contain; filter:drop-shadow(0 10px 24px rgba(11,78,162,.22)); }
+.logo-img-main { width:420px; max-width:100%; height:260px; object-fit:contain; filter:drop-shadow(0 12px 34px rgba(11,78,162,.26)); animation:logoFloat 3s ease-in-out infinite; }
 @keyframes logoFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 .login-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:28px; width:100%; max-width:420px; box-shadow:var(--shadow-lg); position:relative; z-index:1; animation:cardIn .5s ease; }
 @keyframes cardIn { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
@@ -152,10 +158,10 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .iw { position:relative; margin-bottom:12px; }
 .iw input { width:100%; padding:13px 42px 13px 14px; background:var(--input-bg); color:var(--text); border:1.5px solid var(--border2); border-radius:var(--radius-sm); font-size:14px; font-family:var(--font); outline:none; transition:var(--transition); }
 .iw input::placeholder { color:var(--text3); }
-.iw input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,140,245,.15); }
+.iw input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(11,78,162,.15); }
 .eye { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text3); padding:4px; }
 .lbtn { width:100%; padding:13px; background:var(--accent); color:#fff; border:none; border-radius:var(--radius-sm); font-size:15px; font-weight:700; cursor:pointer; margin-top:4px; transition:var(--transition); font-family:var(--font); letter-spacing:.3px; }
-.lbtn:hover { transform:translateY(-1px); box-shadow:0 8px 22px rgba(132,72,255,.25); }
+.lbtn:hover { transform:translateY(-1px); box-shadow:0 8px 22px rgba(11,78,162,.24); }
 .lbtn:active { transform:translateY(0); }
 .lbtn.loading { pointer-events:none; opacity:.92; }
 .btn-spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; display:inline-block; animation:spin 0.8s linear infinite; vertical-align:middle; }
@@ -202,7 +208,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .hdr-r { display:flex; align-items:center; gap:8px; flex-shrink:0; flex-wrap:wrap; }
 .hdr-date { color:var(--text3); font-size:11px; white-space:nowrap; font-family:var(--mono); background:var(--bg3); padding:6px 10px; border-radius:7px; border:1px solid var(--border); }
 .xbtn { padding:7px 14px; background:var(--bg3); color:var(--text2); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; transition:var(--transition); font-family:var(--font); }
-.xbtn:hover { background:var(--sidebar-hover); color:var(--accent); border-color:rgba(132,72,255,.16); }
+.xbtn:hover { background:var(--sidebar-hover); color:var(--accent); border-color:rgba(11,78,162,.18); }
 .pbody {
     flex: 1;
     min-height: 0;
@@ -249,14 +255,14 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .by { background:rgba(255,165,2,.15); color:var(--warn); }
 .br { background:rgba(255,71,87,.15); color:var(--danger); }
 .bgr { background:var(--bg3); color:var(--text3); }
-.bafk { background:rgba(165,94,234,.15); color:var(--purple); }
+.bafk { background:rgba(29,78,216,.14); color:var(--purple); }
 .bauto { background:rgba(6,214,160,.15); color:var(--accent2); }
 
 .frow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
 .frow input, .frow select, .sf input, .sf select { padding:8px 10px; border:1.5px solid var(--border2); border-radius:var(--radius-sm); font-size:12.5px; background:var(--input-bg); color:var(--text); outline:none; transition:var(--transition); font-family:var(--font); }
-.frow input:focus, .frow select:focus, .sf input:focus, .sf select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,140,245,.12); }
+.frow input:focus, .frow select:focus, .sf input:focus, .sf select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(11,78,162,.12); }
 .bb { padding:9px 16px; background:var(--accent); color:#fff; border:none; border-radius:var(--radius-sm); font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap; transition:var(--transition); font-family:var(--font); }
-.bb:hover { background:#743af5; transform:translateY(-1px); box-shadow:0 8px 18px rgba(132,72,255,.20); }
+.bb:hover { background:#083b7a; transform:translateY(-1px); box-shadow:0 8px 18px rgba(11,78,162,.22); }
 .bg2 { padding:9px 16px; background:var(--bg3); color:var(--text2); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap; transition:var(--transition); font-family:var(--font); }
 .bg2:hover { background:var(--bg2); }
 .brd { padding:5px 10px; background:rgba(255,71,87,.15); color:var(--danger); border:1px solid rgba(255,71,87,.25); border-radius:var(--radius-sm); font-size:11.5px; cursor:pointer; font-weight:600; transition:var(--transition); font-family:var(--font); }
@@ -292,7 +298,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .dash-mini-stat strong { display:block; font-size:16px; color:var(--text); font-family:var(--mono); }
 .dash-mini-stat span { display:block; margin-top:4px; font-size:11px; color:var(--text2); }
 .dash-line-chart { position:relative; width:100%; height:190px; border-radius:12px; background:
-  linear-gradient(to bottom, rgba(132,72,255,.08), rgba(132,72,255,.02)),
+  linear-gradient(to bottom, rgba(11,78,162,.08), rgba(11,78,162,.02)),
   repeating-linear-gradient(to top, transparent 0, transparent 36px, var(--chart-grid-line) 37px);
   border:1px solid var(--border);
   overflow:hidden;
@@ -334,32 +340,6 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .dash-eff-dot.yellow { background:#f4b740; }
 .dash-eff-dot.red { background:#f25f5c; }
 .dash-eff-value { font-size:12px; font-weight:800; font-family:var(--mono); white-space:nowrap; color:var(--text); }
-.dash-amocrm-card { grid-column:1 / -1; }
-.dash-amocrm-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
-.dash-amocrm-stat { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
-.dash-amocrm-stat strong { display:block; color:var(--text); font-size:20px; line-height:1; font-weight:900; font-family:var(--mono); }
-.dash-amocrm-stat span { display:block; color:var(--text2); font-size:11px; margin-top:5px; }
-.dash-amocrm-chart { min-height:230px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(116px,1fr); gap:14px; align-items:end; border:1px solid var(--border); border-radius:12px; padding:16px 14px 12px; background:
-  linear-gradient(to bottom, rgba(132,72,255,.06), rgba(132,72,255,.01)),
-  repeating-linear-gradient(to top, transparent 0, transparent 39px, var(--chart-grid-line) 40px);
-  overflow-x:auto;
-}
-.dash-amocrm-bar-item { min-width:116px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; min-height:222px; }
-.dash-amocrm-count { color:var(--text); font-size:13px; font-weight:900; font-family:var(--mono); }
-.dash-amocrm-track { width:100%; max-width:54px; height:150px; border-radius:10px 10px 7px 7px; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:end; overflow:hidden; }
-.dash-amocrm-fill { width:100%; min-height:4px; border-radius:10px 10px 6px 6px; overflow:hidden; display:flex; flex-direction:column-reverse; background:rgba(74,140,245,.16); transition:height .35s ease; }
-.dash-amocrm-seg { width:100%; min-height:3px; }
-.dash-amocrm-seg.green { background:var(--success); }
-.dash-amocrm-seg.red { background:var(--danger); }
-.dash-amocrm-label { max-width:112px; text-align:center; min-height:36px; display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:flex-start; }
-.dash-amocrm-name { color:var(--text2); font-size:11px; font-weight:800; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
-.dash-amocrm-owner { color:var(--text3); font-size:10.5px; line-height:1.25; max-width:112px; display:flex; flex-direction:column; align-items:center; gap:1px; }
-.dash-amocrm-owner span { display:block; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.dash-amocrm-legend { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; color:var(--text2); font-size:11px; }
-.dash-amocrm-legend span { display:inline-flex; align-items:center; gap:6px; }
-.dash-amocrm-legend i { width:9px; height:9px; border-radius:50%; display:inline-block; }
-.dash-amocrm-legend .green { background:var(--success); }
-.dash-amocrm-legend .red { background:var(--danger); }
 
 .sf { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
 
@@ -383,7 +363,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .fw-afk { color:var(--text2); font-size:10.5px; margin-top:3px; }
 .fw-video-wrap { position:relative; }
 .fw-minimize { background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px; line-height:1; padding:2px; }
-.fw-reg-btn { width:100%; margin-top:6px; padding:5px; background:rgba(74,140,245,.15); color:var(--accent); border:1px solid rgba(74,140,245,.3); border-radius:6px; font-size:10px; font-weight:700; cursor:pointer; font-family:var(--font); }
+.fw-reg-btn { width:100%; margin-top:6px; padding:5px; background:rgba(11,78,162,.14); color:var(--accent); border:1px solid rgba(11,78,162,.28); border-radius:6px; font-size:10px; font-weight:700; cursor:pointer; font-family:var(--font); }
 .fw-liveness { font-size:10px; color:var(--text3); margin-top:3px; text-align:center; }
 
 #afkBanner { display:none; position:fixed; top:0; left:0; right:0; z-index:1000; background:linear-gradient(135deg,var(--danger),#c0392b); color:#fff; text-align:center; padding:10px 16px; font-size:13px; font-weight:700; box-shadow:var(--shadow); animation:slideDown .3s ease; }
@@ -429,7 +409,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .efw { grid-column:1/-1; }
 .tags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
 .tag { padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; font-family:var(--mono); }
-.tb { background:rgba(74,140,245,.15); color:var(--accent); }
+.tb { background:rgba(11,78,162,.14); color:var(--accent); }
 .tg { background:var(--bg3); color:var(--text2); }
 .to { background:rgba(255,165,2,.15); color:var(--warn); }
 .ta { background:rgba(255,71,87,.15); color:var(--danger); }
@@ -442,7 +422,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .aen { background:linear-gradient(135deg,var(--danger),#c0392b); color:#fff; }
 .aco { background:linear-gradient(135deg,var(--accent),#3a6ee0); color:#fff; width:100%; display:block; padding:12px; margin-bottom:12px; border:none; border-radius:var(--radius-sm); font-size:13px; font-weight:700; cursor:pointer; font-family:var(--font); transition:var(--transition); }
 .aco:hover { transform:translateY(-1px); }
-.apr { background:linear-gradient(135deg,var(--purple),#7d3cff); color:#fff; }
+.apr { background:linear-gradient(135deg,var(--purple),#0f5fb8); color:#fff; }
 .tgrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:8px; }
 .tb2 h4 { font-size:10.5px; color:var(--text2); margin-bottom:4px; text-transform:uppercase; letter-spacing:.4px; }
 .tv { font-size:22px; font-weight:800; font-family:var(--mono); color:var(--text); }
@@ -464,14 +444,14 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .note { font-size:10.5px; color:var(--text3); margin-top:8px; }
 
 .fb-item { background:var(--bg3); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; border:1px solid var(--border); animation:fadeUp .3s ease; }
-.fb-item.new-item { border-color:rgba(74,140,245,.4); }
+.fb-item.new-item { border-color:rgba(11,78,162,.38); }
 .fb-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px; }
 .fb-name { font-size:12px; font-weight:700; }
 .fb-date { font-size:11px; color:var(--text3); font-family:var(--mono); }
 .fb-msg { font-size:12.5px; color:var(--text); margin-bottom:8px; line-height:1.5; }
 .fb-type { padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }
 .fb-type.complaint { background:rgba(255,71,87,.15); color:var(--danger); }
-.fb-type.suggestion { background:rgba(74,140,245,.15); color:var(--accent); }
+.fb-type.suggestion { background:rgba(11,78,162,.14); color:var(--accent); }
 .fb-type.other { background:var(--bg3); color:var(--text2); }
 .fb-reply-area { margin-top:6px; }
 .fb-reply-area textarea { width:100%; padding:8px 10px; background:var(--input-bg); border:1.5px solid var(--border2); border-radius:var(--radius-sm); font-size:12px; color:var(--text); font-family:var(--font); resize:vertical; min-height:60px; outline:none; }
@@ -479,7 +459,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .fb-replied { background:rgba(6,214,160,.08); border-radius:var(--radius-sm); padding:8px 10px; font-size:12px; color:var(--accent2); border-left:3px solid var(--accent2); margin-top:6px; }
 .notif-badge { background:var(--danger); color:#fff; font-size:10px; font-weight:800; font-family:var(--mono); border-radius:10px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
 .notif-item { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); transition:var(--transition); }
-.notif-item.unread { background:rgba(74,140,245,.05); }
+.notif-item.unread { background:rgba(11,78,162,.05); }
 .notif-item:hover { background:var(--hover); }
 .notif-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:4px; }
 .notif-dot.read { background:var(--border2); }
@@ -487,8 +467,8 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .notif-title { font-size:12.5px; font-weight:700; margin-bottom:2px; }
 .notif-msg { font-size:11.5px; color:var(--text2); }
 .notif-time { font-size:10px; color:var(--text3); font-family:var(--mono); margin-top:2px; }
-.push-notif-btn { width:100%; padding:9px; background:rgba(74,140,245,.15); color:var(--accent); border:1px solid rgba(74,140,245,.3); border-radius:var(--radius-sm); font-size:12px; font-weight:700; cursor:pointer; font-family:var(--font); margin-bottom:10px; transition:var(--transition); }
-.push-notif-btn:hover { background:rgba(74,140,245,.25); }
+.push-notif-btn { width:100%; padding:9px; background:rgba(11,78,162,.14); color:var(--accent); border:1px solid rgba(11,78,162,.28); border-radius:var(--radius-sm); font-size:12px; font-weight:700; cursor:pointer; font-family:var(--font); margin-bottom:10px; transition:var(--transition); }
+.push-notif-btn:hover { background:rgba(11,78,162,.22); }
 
 .face-reg-box { background:var(--bg3); border-radius:var(--radius); padding:14px; border:1px solid var(--border); margin-bottom:10px; }
 .face-reg-box h4 { font-size:12px; font-weight:700; margin-bottom:8px; }
@@ -547,7 +527,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .amocrm-error { background:rgba(255,71,87,.08); color:var(--danger); border:1px solid rgba(255,71,87,.22); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:12px; font-size:12.5px; }
 .amocrm-table-note { color:var(--text3); font-size:12px; margin-bottom:10px; }
 .amocrm-stat-row { cursor:pointer; }
-.amocrm-stat-row:focus { outline:2px solid rgba(132,72,255,.35); outline-offset:-2px; }
+.amocrm-stat-row:focus { outline:2px solid rgba(11,78,162,.35); outline-offset:-2px; }
 .amocrm-employee-name { font-weight:800; color:var(--text); }
 .amocrm-num-cell { font-family:var(--mono); color:var(--text); font-weight:700; }
 .amocrm-status { display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:4px 10px; font-size:11px; font-weight:800; white-space:nowrap; }
@@ -623,13 +603,13 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .pbx-field { display:grid; gap:6px; min-width:0; }
 .pbx-field span { color:var(--text3); font-size:11px; font-weight:900; text-transform:uppercase; }
 .pbx-field input, .pbx-field select { width:100%; min-height:38px; border:1.5px solid var(--border2); border-radius:var(--radius-sm); background:var(--card); color:var(--text); padding:8px 10px; font-family:var(--font); font-size:13px; outline:none; transition:var(--transition); }
-.pbx-field input:focus, .pbx-field select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(127,75,255,.10); }
+.pbx-field input:focus, .pbx-field select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(11,78,162,.10); }
 .pbx-range-head { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
 .pbx-date-picker { position:relative; width:auto; z-index:30; }
 .pbx-calendar-toggle { width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border:1.5px solid var(--border2); border-radius:var(--radius-sm); background:var(--card); color:var(--accent); cursor:pointer; transition:var(--transition); box-shadow:var(--shadow); }
-.pbx-calendar-toggle:hover, .pbx-date-picker.open .pbx-calendar-toggle { border-color:var(--accent); background:rgba(127,75,255,.08); }
+.pbx-calendar-toggle:hover, .pbx-date-picker.open .pbx-calendar-toggle { border-color:var(--accent); background:rgba(11,78,162,.08); }
 .pbx-date-trigger { width:100%; min-height:68px; display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; text-align:left; padding:12px 14px; border:1.5px solid var(--border2); border-radius:var(--radius); background:var(--card); color:var(--text); font-family:var(--font); cursor:pointer; box-shadow:var(--shadow); transition:var(--transition); }
-.pbx-date-trigger:hover, .pbx-date-picker.open .pbx-date-trigger { border-color:var(--accent); box-shadow:0 12px 26px rgba(127,75,255,.12); }
+.pbx-date-trigger:hover, .pbx-date-picker.open .pbx-date-trigger { border-color:var(--accent); box-shadow:0 12px 26px rgba(11,78,162,.12); }
 .pbx-range-label { display:inline-flex; align-items:center; gap:7px; color:var(--text3); font-size:11px; font-weight:900; text-transform:uppercase; }
 .pbx-date-trigger strong { grid-column:1/2; color:var(--text); font-size:17px; font-weight:900; line-height:1.15; }
 .pbx-date-trigger small { grid-column:1/2; color:var(--text2); font-size:12px; line-height:1.2; }
@@ -645,7 +625,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .pbx-range-presets { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
 .pbx-range-presets button, .pbx-cal-nav, .pbx-day { font-family:var(--font); cursor:pointer; transition:var(--transition); }
 .pbx-range-presets button { min-height:30px; padding:6px 9px; border:1.5px solid var(--border2); border-radius:18px; background:var(--bg3); color:var(--text2); font-size:10px; font-weight:900; }
-.pbx-range-presets button:hover { border-color:var(--accent); color:var(--accent); background:rgba(127,75,255,.08); }
+.pbx-range-presets button:hover { border-color:var(--accent); color:var(--accent); background:rgba(11,78,162,.08); }
 .pbx-calendar { width:100%; border:1px solid var(--border); border-radius:var(--radius); background:var(--card2); padding:10px; box-shadow:none; }
 .pbx-calendar-head { display:grid; grid-template-columns:32px 1fr 32px; align-items:center; gap:6px; margin-bottom:8px; }
 .pbx-calendar-head strong { text-align:center; color:var(--text); font-size:13px; font-weight:900; text-transform:capitalize; }
@@ -655,17 +635,17 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .pbx-weekdays { margin-bottom:6px; }
 .pbx-weekdays span { text-align:center; color:var(--text3); font-size:10px; font-weight:900; }
 .pbx-day { aspect-ratio:1/1; min-width:0; border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text); font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
-.pbx-day:hover { border-color:var(--accent); color:var(--accent); background:rgba(127,75,255,.08); }
+.pbx-day:hover { border-color:var(--accent); color:var(--accent); background:rgba(11,78,162,.08); }
 .pbx-day.outside { color:var(--text3); opacity:.42; }
-.pbx-day.today { border-color:rgba(127,75,255,.45); }
-.pbx-day.in-range { background:rgba(127,75,255,.12); color:var(--accent); }
-.pbx-day.selected, .pbx-day.range-start, .pbx-day.range-end { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 6px 18px rgba(127,75,255,.24); }
+.pbx-day.today { border-color:rgba(11,78,162,.45); }
+.pbx-day.in-range { background:rgba(11,78,162,.12); color:var(--accent); }
+.pbx-day.selected, .pbx-day.range-start, .pbx-day.range-end { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 6px 18px rgba(11,78,162,.24); }
 .pbx-summary-grid { display:grid; grid-template-columns:repeat(8,minmax(138px,1fr)); gap:12px; margin-bottom:18px; }
-.pbx-stat-card { --pbx-accent:var(--accent); --pbx-soft:rgba(127,75,255,.10); position:relative; overflow:hidden; box-shadow:var(--shadow); background:linear-gradient(180deg,var(--pbx-soft),var(--card)); border-color:color-mix(in srgb, var(--pbx-accent) 22%, var(--border)); display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto; column-gap:8px; row-gap:7px; align-items:center; }
+.pbx-stat-card { --pbx-accent:var(--accent); --pbx-soft:rgba(11,78,162,.10); position:relative; overflow:hidden; box-shadow:var(--shadow); background:linear-gradient(180deg,var(--pbx-soft),var(--card)); border-color:color-mix(in srgb, var(--pbx-accent) 22%, var(--border)); display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto; column-gap:8px; row-gap:7px; align-items:center; }
 .pbx-stat-card::after { content:''; position:absolute; left:12px; right:12px; bottom:8px; height:3px; border-radius:999px; background:var(--pbx-accent); opacity:.9; }
 .pbx-stat-card[data-tone="incoming"] { --pbx-accent:var(--success); --pbx-soft:rgba(46,213,115,.10); }
 .pbx-stat-card[data-tone="outgoing"] { --pbx-accent:var(--accent2); --pbx-soft:rgba(0,194,255,.10); }
-.pbx-stat-card[data-tone="internal"] { --pbx-accent:var(--purple); --pbx-soft:rgba(127,75,255,.10); }
+.pbx-stat-card[data-tone="internal"] { --pbx-accent:var(--purple); --pbx-soft:rgba(29,78,216,.10); }
 .pbx-stat-card[data-tone="outside-work"] { --pbx-accent:var(--warn); --pbx-soft:rgba(255,171,0,.12); }
 .pbx-stat-card[data-tone="missed"] { --pbx-accent:var(--danger); --pbx-soft:rgba(255,71,87,.10); }
 .pbx-stat-card[data-tone="not-called"] { --pbx-accent:var(--warn); --pbx-soft:rgba(255,171,0,.12); }
@@ -682,7 +662,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .pbx-course-chart-box, .pbx-responsibles-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; box-shadow:var(--shadow); margin-bottom:24px; }
 .pbx-result-count { color:var(--text3); font-size:12px; font-family:var(--mono); }
 .pbx-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:20px; background:var(--bg3); color:var(--text2); border:1px solid var(--border); font-size:11px; font-weight:800; white-space:nowrap; }
-.pbx-badge.course { background:rgba(127,75,255,.08); color:var(--accent); border-color:rgba(127,75,255,.18); }
+.pbx-badge.course { background:rgba(11,78,162,.08); color:var(--accent); border-color:rgba(11,78,162,.18); }
 .pbx-badge.answered { background:rgba(46,213,115,.10); color:var(--success); border-color:rgba(46,213,115,.22); }
 .pbx-badge.missed { background:rgba(255,71,87,.10); color:var(--danger); border-color:rgba(255,71,87,.22); }
 .pbx-recording-link { display:inline-flex; align-items:center; gap:6px; color:var(--accent); font-size:12px; font-weight:800; text-decoration:none; }
@@ -703,7 +683,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .pbx-course-bar.empty { opacity:.52; }
 .pbx-course-count { min-height:18px; color:var(--text); font-family:var(--mono); font-size:15px; font-weight:900; }
 .pbx-course-track { height:100%; display:flex; align-items:flex-end; justify-content:center; }
-.pbx-course-track span { display:block; width:58%; min-height:0; border-radius:10px 10px 3px 3px; background:linear-gradient(180deg,var(--metric-color),var(--accent2)); box-shadow:0 9px 20px rgba(127,75,255,.18); transition:height .25s ease; }
+.pbx-course-track span { display:block; width:58%; min-height:0; border-radius:10px 10px 3px 3px; background:linear-gradient(180deg,var(--metric-color),var(--accent2)); box-shadow:0 9px 20px rgba(11,78,162,.18); transition:height .25s ease; }
 .pbx-course-bar.peak .pbx-course-count, .pbx-course-bar.peak .pbx-course-name { color:var(--metric-color); }
 .pbx-course-name { min-width:0; color:var(--text); font-size:12px; font-weight:900; line-height:1.15; overflow:hidden; text-overflow:ellipsis; }
 .pbx-hour-section { margin-top:20px; border-top:1px solid var(--border); padding-top:16px; }
@@ -711,7 +691,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .pbx-hour-bar { min-width:38px; height:170px; display:grid; grid-template-rows:20px 1fr 22px; gap:5px; align-items:end; text-align:center; color:var(--text3); font-size:10px; font-family:var(--mono); }
 .pbx-hour-count { min-height:16px; font-weight:900; color:var(--text2); }
 .pbx-hour-track { height:100%; display:flex; align-items:flex-end; justify-content:center; }
-.pbx-hour-track span { display:block; width:72%; min-height:0; border-radius:8px 8px 2px 2px; background:linear-gradient(180deg,var(--accent),var(--accent2)); box-shadow:0 8px 18px rgba(127,75,255,.16); }
+.pbx-hour-track span { display:block; width:72%; min-height:0; border-radius:8px 8px 2px 2px; background:linear-gradient(180deg,var(--accent),var(--accent2)); box-shadow:0 8px 18px rgba(11,78,162,.16); }
 .pbx-hour-bar.peak .pbx-hour-count, .pbx-hour-bar.peak .pbx-hour-label { color:var(--accent); }
 .pbx-hour-bar.peak .pbx-hour-track span { background:linear-gradient(180deg,var(--danger),var(--warn)); }
 .pbx-hour-label { font-weight:900; }
@@ -721,7 +701,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .pbx-responsible-course { display:flex; align-items:center; gap:8px; color:var(--accent); }
 .pbx-responsible-course strong { color:var(--text); font-size:14px; font-weight:900; }
 .pbx-responsible-people { display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-height:26px; }
-.pbx-responsible-people span { display:inline-flex; align-items:center; border:1px solid rgba(127,75,255,.18); background:rgba(127,75,255,.08); color:var(--accent); border-radius:20px; padding:4px 8px; font-size:11px; font-weight:900; }
+.pbx-responsible-people span { display:inline-flex; align-items:center; border:1px solid rgba(11,78,162,.18); background:rgba(11,78,162,.08); color:var(--accent); border-radius:20px; padding:4px 8px; font-size:11px; font-weight:900; }
 .pbx-responsible-people em { color:var(--text3); font-size:12px; font-style:normal; }
 @media(max-width:1320px){ .pbx-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr));}.pbx-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
 @media(max-width:1100px){ .pbx-course-chart{grid-template-columns:repeat(6,minmax(104px,1fr));}.pbx-course-bar{min-width:104px;} }
@@ -814,7 +794,6 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
   .amocrm-toolbar .bb{width:100%;}
   .amocrm-task-meta{grid-template-columns:1fr 1fr;}
   .amocrm-task-head{flex-direction:column;}
-  .dash-amocrm-summary{grid-template-columns:1fr;}
   .amocrm-dept-grid{grid-template-columns:1fr;}
   .amocrm-dept-active{font-size:30px;}
   #faceWidget{width:150px;bottom:8px;right:8px;}
