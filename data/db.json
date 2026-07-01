@@ -1,0 +1,55 @@
+{
+  "users": [
+    {
+      "id": "admin-0d0d800a-b1bb-42bf-aac2-eece1483024a",
+      "email": "admin@local",
+      "password": "admin123",
+      "role": "admin",
+      "created_at": "2026-06-30T11:15:41.566Z"
+    },
+    {
+      "id": "1c5fecb7-1964-4581-b96e-64ecb0444ab1",
+      "email": "diyor@mail.com",
+      "password": "123456",
+      "role": "employee",
+      "created_at": "2026-06-30T11:19:16.373Z"
+    }
+  ],
+  "admins": [
+    {
+      "id": "0c72a4c1-f2f6-486c-9cc1-d26e1ae71473",
+      "user_id": "admin-0d0d800a-b1bb-42bf-aac2-eece1483024a",
+      "name": "Administrator",
+      "login": "admin@local",
+      "active": true
+    }
+  ],
+  "employees": [
+    {
+      "id": "ee6faf8a-498b-485a-8373-349c7da0811c",
+      "user_id": "1c5fecb7-1964-4581-b96e-64ecb0444ab1",
+      "name": "Umirbekov Diyorbek",
+      "login": "diyor@mail.com",
+      "kpi_type": "senior",
+      "active": true,
+      "face_registered": false,
+      "responsible_course": "copywriter",
+      "created_at": "2026-06-30T11:19:16.374Z"
+    }
+  ],
+  "attendance": [],
+  "kpi_bonuses": [],
+  "settings": [
+    {
+      "key": "face_control_enabled",
+      "value": "{\"enabled\":false}",
+      "id": "5f68929f-5712-4b8c-85a5-b29612611548"
+    }
+  ],
+  "notifications": [],
+  "feedback": [],
+  "lunch_plans": [],
+  "employee_leaves": [],
+  "face_profiles": [],
+  "amocrm_department_task_counts": []
+}
