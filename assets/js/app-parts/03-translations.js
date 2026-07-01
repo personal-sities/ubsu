@@ -775,6 +775,26 @@ Object.assign(TR.en,{
   et_course:'Course responsibility',
   course_none:'-'
 });
+Object.assign(TR.uz,{
+  th_lunch_start:'Tushlik boshlagan',
+  th_lunch_end:'Tushlik tugagan',
+  th_end:'Ish tugagan',
+  month_att_detail_title:'Davomat tafsiloti'
+});
+Object.assign(TR.ru,{
+  th_lunch_start:'Обед начат',
+  th_lunch_end:'Обед окончен',
+  th_end:'Конец работы',
+  month_att_detail_title:'Детали посещаемости',
+  eprl:'Намаз'
+});
+Object.assign(TR.en,{
+  th_lunch_start:'Lunch started',
+  th_lunch_end:'Lunch ended',
+  th_end:'Work ended',
+  month_att_detail_title:'Attendance details',
+  eprl:'Prayer'
+});
 let lang = localStorage.getItem('aloqa_lang') || 'uz';
 const t = k => ((TR[lang] && TR[lang][k]) ?? TR.uz[k] ?? k);
 const tf = (key, params={}) => Object.entries(params).reduce((acc,[name,value]) => acc.replaceAll(`{${name}}`, value), t(key));
