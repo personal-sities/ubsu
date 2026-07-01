@@ -779,21 +779,30 @@ Object.assign(TR.uz,{
   th_lunch_start:'Tushlik boshlagan',
   th_lunch_end:'Tushlik tugagan',
   th_end:'Ish tugagan',
-  month_att_detail_title:'Davomat tafsiloti'
+  month_att_detail_title:'Davomat tafsiloti',
+  employee_adding_wait:'Iltimos kutib turing, hodim qo\'shilyapti...',
+  employee_deleting_wait:'Iltimos kutib turing, hodim o\'chirilyapti...',
+  password_updating_wait:'Iltimos kutib turing, parol o\'zgartirilyapti...'
 });
 Object.assign(TR.ru,{
   th_lunch_start:'Обед начат',
   th_lunch_end:'Обед окончен',
   th_end:'Конец работы',
   month_att_detail_title:'Детали посещаемости',
-  eprl:'Намаз'
+  eprl:'Намаз',
+  employee_adding_wait:'Пожалуйста, подождите, сотрудник добавляется...',
+  employee_deleting_wait:'Пожалуйста, подождите, сотрудник удаляется...',
+  password_updating_wait:'Пожалуйста, подождите, пароль изменяется...'
 });
 Object.assign(TR.en,{
   th_lunch_start:'Lunch started',
   th_lunch_end:'Lunch ended',
   th_end:'Work ended',
   month_att_detail_title:'Attendance details',
-  eprl:'Prayer'
+  eprl:'Prayer',
+  employee_adding_wait:'Please wait, employee is being added...',
+  employee_deleting_wait:'Please wait, employee is being deleted...',
+  password_updating_wait:'Please wait, password is being changed...'
 });
 let lang = localStorage.getItem('aloqa_lang') || 'uz';
 const t = k => ((TR[lang] && TR[lang][k]) ?? TR.uz[k] ?? k);
