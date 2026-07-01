@@ -1375,6 +1375,10 @@ function setAttendanceTableMode(monthly){
   if(dateRange)dateRange.style.display=monthly?'none':'flex';
   if(todayBtn)todayBtn.style.display=monthly?'none':'';
   if(statusFilter)statusFilter.style.display=monthly?'none':'';
+  ['th7','th_afk'].forEach(id=>{
+    const th=document.getElementById(id);
+    if(th)th.style.display=monthly?'none':'';
+  });
 
   if(monthly){
     st('att_t', t('monthly_att_summary_title'));
@@ -1385,8 +1389,6 @@ function setAttendanceTableMode(monthly){
     st('th_lunch_start', t('mas_late_count'));
     st('th_lunch_end', t('mas_absent_days'));
     st('th_end', t('mas_late_time'));
-    st('th7', t('mas_absent_days'));
-    st('th_afk', '');
     st('th8', t('mas_actions'));
   }else{
     st('att_t', t('att_t'));
