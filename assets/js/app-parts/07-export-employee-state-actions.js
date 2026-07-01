@@ -25,7 +25,7 @@ function exportPDF(){
   doc.text('Sana: '+new Date().toLocaleDateString(),14,22);
   const headers=[['#',t('mt_date'),t('mt1'),t('mt2'),t('mt_worked'),t('mt_lunch_start'),t('mt_lunch_end'),t('mt_end')]];
   const rows=monthlyData.map((d,i)=>[i+1,d.date,d.name,d.start,d.hours,d.lunchStart,d.lunchEnd,d.end]);
-  doc.autoTable({head:headers,body:rows,startY:28,styles:{fontSize:9,cellPadding:2},headStyles:{fillColor:[74,140,245],textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:{fillColor:[245,248,252]},margin:{left:14,right:14}});
+  doc.autoTable({head:headers,body:rows,startY:28,styles:{fontSize:9,cellPadding:2},headStyles:{fillColor:[11,78,162],textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:{fillColor:[245,248,252]},margin:{left:14,right:14}});
   doc.save('AloqaPro_'+month+'_attendance.pdf');
   toast('success',t('export_title'),'PDF: '+t('export_downloaded'));
 }
