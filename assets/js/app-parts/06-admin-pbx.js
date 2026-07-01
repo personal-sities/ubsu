@@ -5,14 +5,13 @@ let monthlyData = [];
 let monthlyAttendanceSummary = [];
 let currentAdminTab = 'main';
 
-function initAdmin(){adminTab('main');setToday();setCurMonth();updateDates();updateHolList();updateIPList();loadGPSSettingsUI();loadFaceControlSettings();loadMyIPDisplay();loadNotifEmpSelect();checkFeedbackBadge();subscribeAdminRealtime();loadTodayWorkLeaveCard();if(ENABLE_ONLINEPBX)startPbxAutoRefresh();}
+function initAdmin(){adminTab('main');setToday();setCurMonth();updateDates();updateHolList();updateIPList();loadGPSSettingsUI();loadFaceControlSettings();loadMyIPDisplay();loadNotifEmpSelect();checkFeedbackBadge();subscribeAdminRealtime();loadTodayWorkLeaveCard();}
 
 let _pbxAutoRefreshTimer = null;
 function startPbxAutoRefresh() {
   if (_pbxAutoRefreshTimer) clearInterval(_pbxAutoRefreshTimer);
   // Har 60 soniyada PBX widget'ni yangilab tur
   _pbxAutoRefreshTimer = setInterval(() => {
-    if (currentAdminTab === 'main') loadDashboardPbxWidget();
     if (currentAdminTab === 'pbx')  loadPbxStats();
   }, 60000);
 }
@@ -37,10 +36,6 @@ function adminTab(tab){
   if(tab==='pbx' && ENABLE_ONLINEPBX) loadPbxStats();
   st('admTitle',getAdminTabTitle(tab));
   if(tab!=='amocrm' && tab!=='main')stopAmoCrmTaskPage();
-  if(tab==='main' && ENABLE_AMOCRM){
-    subscribeAmoCrmTaskRealtime();
-    startAmoCrmRefreshInterval();
-  }
   if(tab==='settings'){loadEmpList();updateIPList();loadGPSSettingsUI();loadFaceControlSettings();}
   if(tab==='feedback')loadFeedbackAdmin();
   if(tab==='notif'){loadNotificationsAdmin();loadNotifEmpSelect();}
@@ -493,13 +488,11 @@ function setPbxTitleHtml(id, icon, text){
   if(el)el.innerHTML=pbxIcon(icon) + ' ' + escapePbxHtml(text);
 }
 function refreshPbxStaticLabels(){
-  setPbxTitleHtml('dash_pbx_course_title','BarChart3',pbxText('dashboardTitle'));
   setPbxTitleHtml('pbx_page_title','PhoneCall',pbxText('pageTitle'));
   setPbxTitleHtml('pbx_responsibles_title','Headphones',pbxText('responsiblesTitle'));
   setPbxTitleHtml('pbx_course_chart_title','BarChart3',pbxText('courseCalls'));
   setPbxTitleHtml('pbx_hour_chart_title','Clock',pbxText('hourlyCalls'));
   st('pbx_page_subtitle',pbxText('pageSubtitle'));
-  st('dash_pbx_detail_txt',pbxText('details'));
   st('n_pbx',pbxText('navCalls'));
   const loaded=document.getElementById('pbx_loaded_at');
   if(loaded && /Bugungi|Сегодня|Today/i.test(loaded.textContent || ''))loaded.textContent=pbxText('todayView');
@@ -1159,8 +1152,8 @@ function getPbxCourseChartRows(calls=[]){
 function getPbxCourseMetricMeta(metric=pbxCourseChartMetric){
   return PBX_COURSE_CHART_METRICS.find(item=>item.id===metric) || PBX_COURSE_CHART_METRICS[0];
 }
-function renderPbxCourseMetricButtons(rows=[], target='page'){
-  const wrap=document.getElementById(target==='dashboard' ? 'dash_pbx_course_metric_buttons' : 'pbx_course_metric_buttons');
+function renderPbxCourseMetricButtons(rows=[]){
+  const wrap=document.getElementById('pbx_course_metric_buttons');
   if(!wrap)return;
   wrap.innerHTML='';
   PBX_COURSE_CHART_METRICS.forEach(item=>{
@@ -1178,7 +1171,6 @@ function setPbxCourseChartMetric(metric){
   if(!PBX_COURSE_CHART_METRICS.some(item=>item.id===metric))return;
   pbxCourseChartMetric=metric;
   renderPbxCourseChart(onlinePbxChartCalls);
-  renderDashboardPbxCourseChart(onlinePbxDashboardChartCalls);
 }
 function renderPbxCourseChartInto(calls=[], options={}){
   const chart=document.getElementById(options.chartId || 'pbx_course_chart');
@@ -1219,15 +1211,6 @@ function renderPbxCourseChartInto(calls=[], options={}){
 function renderPbxCourseChart(calls=[]){
   onlinePbxChartCalls=Array.isArray(calls) ? calls : [];
   renderPbxCourseChartInto(onlinePbxChartCalls,{target:'page',chartId:'pbx_course_chart',noteId:'pbx_course_chart_note',rangeNote:getPbxRangeNote()});
-}
-function renderDashboardPbxCourseChart(calls=[]){
-  onlinePbxDashboardChartCalls=Array.isArray(calls) ? calls : [];
-  renderPbxCourseChartInto(onlinePbxDashboardChartCalls,{
-    target:'dashboard',
-    chartId:'dash_pbx_course_chart',
-    noteId:'dash_pbx_course_chart_note',
-    rangeNote:pbxText('today')
-  });
 }
 function formatPbxHourLabel(hour){
   return String(Number(hour || 0)).padStart(2,'0') + ':00';
@@ -1343,45 +1326,6 @@ async function loadPbxStats(options={}){
 }
 function applyPbxFilters(){setPbxCalendarOpen(false);loadPbxStats({filters:{...readOnlinePbxFilters(),offset:0}});}
 function clearPbxFilters(){const filters={...ONLINE_PBX_DEFAULT_FILTERS};setOnlinePbxFilterInputs(filters);setPbxCalendarOpen(false);loadPbxStats({filters});}
-function dashboardPbxFiltersFor(filter){return {...ONLINE_PBX_DEFAULT_FILTERS,...(ONLINE_PBX_DASHBOARD_FILTERS[filter]||{})};}
-function setDashboardPbxLoading(loading){
-  onlinePbxDashboardLoading=loading;
-  const detail=document.getElementById('dash_pbx_detail_txt')?.closest('button');
-  if(detail)detail.disabled=loading;
-}
-function updateDashboardPbxButtons(filter=onlinePbxDashboardFilter){
-  onlinePbxDashboardFilter=filter || 'all';
-}
-function renderDashboardPbxStats(stats={}){
-  return stats;
-}
-function renderDashboardPbxChart(data){
-  renderDashboardPbxCourseChart(data?.calls || []);
-}
-async function loadDashboardPbxWidget(options={}){
-  const filter=options.filter||onlinePbxDashboardFilter||'all';
-  const requestId=++onlinePbxDashboardRequestId;
-  onlinePbxDashboardFilter=filter;updateDashboardPbxButtons(filter);setDashboardPbxLoading(true);
-  refreshPbxStaticLabels();
-  const chart=document.getElementById('dash_pbx_course_chart');
-  if(chart)chart.innerHTML='<div class="pbx-loading">' + pbxIcon('Loader2','spin') + ' ' + pbxText('chartLoading') + '</div>';
-  st('dash_pbx_course_chart_note',pbxText('fullApiLoading'));
-  try{
-    const data=await fetchOnlinePbxAllCalls(dashboardPbxFiltersFor(filter));
-    if(requestId!==onlinePbxDashboardRequestId)return;
-    renderDashboardPbxChart(data);
-  }catch(err){
-    if(requestId!==onlinePbxDashboardRequestId)return;
-    console.error('loadDashboardPbxWidget error:',err);
-    if(chart)chart.innerHTML='<div class="pbx-empty error">' + pbxText('error') + '</div>';
-    st('dash_pbx_course_chart_note','-');
-  }finally{if(requestId===onlinePbxDashboardRequestId)setDashboardPbxLoading(false);}
-}
-function setPbxFilter(filter){onlinePbxDashboardFilter=filter||'all';loadDashboardPbxWidget({filter:onlinePbxDashboardFilter});}
-document.addEventListener('click', event=>{
-  const picker=document.getElementById('pbx_date_picker');
-  if(pbxCalendarOpen && picker && !picker.contains(event.target))setPbxCalendarOpen(false);
-});
 document.addEventListener('keydown', event=>{if(event.key==='Escape')setPbxCalendarOpen(false);});
 document.addEventListener('keydown', event=>{
   if(event.key==='Enter' && event.target && event.target.id==='pbx_phone')applyPbxFilters();
@@ -1402,7 +1346,6 @@ function subscribeAmoCrmTaskRealtime(){
       table:'amocrm_active_tasks'
     }, async () => {
       if(currentAdminTab==='amocrm')await loadAmoCrmDepartmentCounts({showLoading:true});
-      if(currentAdminTab==='main')await loadMainAmoCrmDiagram({showLoading:false});
     })
     .subscribe();
 }
@@ -1410,7 +1353,6 @@ function startAmoCrmRefreshInterval(){
   if(amoCrmRefreshTimer)clearInterval(amoCrmRefreshTimer);
   amoCrmRefreshTimer=setInterval(()=>{
     if(currentAdminTab==='amocrm')loadAmoCrmDepartmentCounts({showLoading:true});
-    if(currentAdminTab==='main')loadMainAmoCrmDiagram({showLoading:false});
   }, 30000);
 }
 function startAmoCrmTaskPage(){
@@ -1647,7 +1589,6 @@ function renderDashboardCharts(rows,workDays,empCount,recs=[]){
   }
   if(currentAdminTab==='main')animateVisibleCards(document.getElementById('tab_main'));
 }
-let mainAmoCrmDiagramRequestId = 0;
 let amoCrmActiveEmployees = [];
 let unfinishedTaskWarningAt = 0;
 const AMOCRM_EMPLOYEE_COURSE_COLUMN = 'responsible_course';
@@ -1660,17 +1601,6 @@ const AMOCRM_DEPARTMENT_OPTIONS = [
   {key:'umumiy call', label:'Umumiy call', ids:[], defaultNames:["Zokirova Ra'no"]},
   {key:'copywriter', label:'Copywriter', ids:[9035378], defaultNames:['Umirbekov Diyorbek']}
 ];
-function createMainAmoCrmStat(value,label){
-  const card=document.createElement('div');
-  card.className='dash-amocrm-stat';
-  const v=document.createElement('strong');
-  v.textContent=String(value);
-  const l=document.createElement('span');
-  l.textContent=label;
-  card.appendChild(v);
-  card.appendChild(l);
-  return card;
-}
 function normalizeAmoCrmDepartmentName(name=''){
   return String(name).toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
 }
@@ -1811,151 +1741,6 @@ function getAmoCrmResponsibleShortNames(row, employees=amoCrmActiveEmployees, re
 function getAmoCrmResponsibleShortName(row, employees=amoCrmActiveEmployees){
   return getAmoCrmResponsibleShortNames(row, employees).join(', ');
 }
-function setMainAmoCrmDiagramLoading(){
-  const summary=document.getElementById('dash_amocrm_summary');
-  const chart=document.getElementById('dash_amocrm_chart');
-  const legend=document.getElementById('dash_amocrm_legend');
-  if(summary){
-    summary.innerHTML='';
-    summary.appendChild(createMainAmoCrmStat('...', t('amocrm_department_active')));
-    summary.appendChild(createMainAmoCrmStat('...', t('amocrm_department_overdue')));
-    summary.appendChild(createMainAmoCrmStat('...', t('amocrm_department_on_time')));
-  }
-  if(chart){
-    chart.innerHTML='';
-    const empty=document.createElement('div');
-    empty.className='dash-empty';
-    empty.textContent=t('loading');
-    chart.appendChild(empty);
-  }
-  if(legend)legend.innerHTML='';
-}
-function renderMainAmoCrmDiagram(rows=[], employees=amoCrmActiveEmployees){
-  if(Array.isArray(employees))setAmoCrmActiveEmployees(employees);
-  const responsibilityMap=buildCourseResponsibilityMap(amoCrmActiveEmployees);
-  const summary=document.getElementById('dash_amocrm_summary');
-  const chart=document.getElementById('dash_amocrm_chart');
-  const legend=document.getElementById('dash_amocrm_legend');
-  const items=Array.isArray(rows) ? rows.slice().sort((a,b)=>amoCrmSafeCount(a.sort_order)-amoCrmSafeCount(b.sort_order)) : [];
-  const total=items.reduce((sum,row)=>sum+amoCrmSafeCount(row.active_tasks),0);
-  const overdue=items.reduce((sum,row)=>sum+amoCrmSafeCount(row.overdue_tasks),0);
-  const onTime=items.reduce((sum,row)=>sum+amoCrmSafeCount(row.on_time_tasks),0);
-  if(summary){
-    summary.innerHTML='';
-    summary.appendChild(createMainAmoCrmStat(total, t('amocrm_department_active')));
-    summary.appendChild(createMainAmoCrmStat(overdue, t('amocrm_department_overdue')));
-    summary.appendChild(createMainAmoCrmStat(onTime, t('amocrm_department_on_time')));
-  }
-  if(chart){
-    chart.innerHTML='';
-    if(!items.length){
-      const empty=document.createElement('div');
-      empty.className='dash-empty';
-      empty.textContent=t('dash_amocrm_empty');
-      chart.appendChild(empty);
-    }else{
-      const maxActive=Math.max(...items.map(row=>amoCrmSafeCount(row.active_tasks)),1);
-      items.forEach(row=>{
-        const active=amoCrmSafeCount(row.active_tasks);
-        const rowOverdue=amoCrmSafeCount(row.overdue_tasks);
-        const rowOnTime=amoCrmSafeCount(row.on_time_tasks);
-        const barHeight=active ? Math.max(6, Math.round((active/maxActive)*100)) : 0;
-        const overduePct=active ? Math.max(0, Math.min(100, (rowOverdue/active)*100)) : 0;
-        const onTimePct=active ? Math.max(0, Math.min(100, (rowOnTime/active)*100)) : 0;
-
-        const item=document.createElement('div');
-        item.className='dash-amocrm-bar-item';
-        item.title=`${row.department_name || '-'}: ${active}`;
-        item.dataset.id=String(row.responsible_user_id ?? '');
-
-        const count=document.createElement('div');
-        count.className='dash-amocrm-count';
-        count.textContent=String(active);
-
-        const track=document.createElement('div');
-        track.className='dash-amocrm-track';
-        const fill=document.createElement('div');
-        fill.className='dash-amocrm-fill';
-        fill.style.height=active ? `${barHeight}%` : '0';
-
-        if(active){
-          const green=document.createElement('div');
-          green.className='dash-amocrm-seg green';
-          green.style.height=`${onTimePct}%`;
-          green.title=`${t('amocrm_department_on_time')}: ${rowOnTime}`;
-          const red=document.createElement('div');
-          red.className='dash-amocrm-seg red';
-          red.style.height=`${overduePct}%`;
-          red.title=`${t('amocrm_department_overdue')}: ${rowOverdue}`;
-          fill.appendChild(green);
-          fill.appendChild(red);
-        }
-
-        const label=document.createElement('div');
-        label.className='dash-amocrm-label';
-        const name=document.createElement('div');
-        name.className='dash-amocrm-name';
-        name.textContent=row.department_name || '-';
-        const owner=document.createElement('div');
-        owner.className='dash-amocrm-owner';
-        const ownerNames=getAmoCrmResponsibleShortNames(row, amoCrmActiveEmployees, responsibilityMap);
-        ownerNames.forEach((ownerName, ownerIdx)=>{
-          const line=document.createElement('span');
-          line.textContent=ownerIdx < ownerNames.length - 1 ? `${ownerName},` : ownerName;
-          owner.appendChild(line);
-        });
-        label.appendChild(name);
-        if(owner.childNodes.length)label.appendChild(owner);
-
-        track.appendChild(fill);
-        item.appendChild(count);
-        item.appendChild(track);
-        item.appendChild(label);
-        chart.appendChild(item);
-      });
-    }
-  }
-  if(legend){
-    legend.innerHTML='';
-    const onTimeItem=document.createElement('span');
-    const onTimeDot=document.createElement('i');
-    onTimeDot.className='green';
-    onTimeItem.appendChild(onTimeDot);
-    onTimeItem.appendChild(document.createTextNode(t('amocrm_department_on_time')));
-    const overdueItem=document.createElement('span');
-    const overdueDot=document.createElement('i');
-    overdueDot.className='red';
-    overdueItem.appendChild(overdueDot);
-    overdueItem.appendChild(document.createTextNode(t('amocrm_department_overdue')));
-    legend.appendChild(onTimeItem);
-    legend.appendChild(overdueItem);
-  }
-  if(currentAdminTab==='main')animateVisibleCards(document.getElementById('tab_main'));
-}
-async function loadMainAmoCrmDiagram({showLoading=true, employees=null}={}){
-  const requestId=++mainAmoCrmDiagramRequestId;
-  if(Array.isArray(employees))setAmoCrmActiveEmployees(employees);
-  if(showLoading)setMainAmoCrmDiagramLoading();
-  try{
-    const {data,error}=await fetchAmoCrmDepartmentTaskCounts();
-    if(error)throw error;
-    if(requestId!==mainAmoCrmDiagramRequestId)return;
-    renderMainAmoCrmDiagram(data||[], amoCrmActiveEmployees);
-  }catch(e){
-    if(requestId!==mainAmoCrmDiagramRequestId)return;
-    console.error('loadMainAmoCrmDiagram error:', e);
-    renderMainAmoCrmDiagram([], amoCrmActiveEmployees);
-    const chart=document.getElementById('dash_amocrm_chart');
-    if(chart){
-      chart.innerHTML='';
-      const empty=document.createElement('div');
-      empty.className='dash-empty';
-      empty.textContent=e.message || t('amocrm_stats_error');
-      chart.appendChild(empty);
-    }
-    if(showLoading && currentAdminTab==='main')toast('error', t('error_title'), t('amocrm_stats_error'));
-  }
-}
 async function loadDashboard(){
   const month=document.getElementById('fmonth')?.value||curM();
   st('dash_month',month);
@@ -1966,7 +1751,6 @@ async function loadDashboard(){
   if(stats)stats.innerHTML=`<div class="dash-mini-stat"><strong>...</strong><span>${t('loading')}</span></div>`;
   if(labels)labels.innerHTML='';
   ['dash_late','dash_kpi'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=`<div class="dash-empty">${t('loading')}</div>`;});
-  setMainAmoCrmDiagramLoading();
   const[y,mo]=month.split('-').map(Number);const dim=new Date(y,mo,0).getDate();
   let wd=0;for(let d=1;d<=dim;d++){const ds=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(isWorkDay(ds))wd++;}
   const monthStart=`${month}-01`;
@@ -1977,9 +1761,6 @@ async function loadDashboard(){
     fetchEmployeeLeavesInRange(monthStart, monthEnd)
   ]);
   if(empErr||recErr){toast('error','Dashboard',(empErr||recErr).message||t('dashboard_error'));return;}
-  setAmoCrmActiveEmployees((emps||[]).filter(emp=>emp.active!==false));
-  loadMainAmoCrmDiagram({showLoading:false, employees:amoCrmActiveEmployees});
-  loadDashboardPbxWidget();
   const leaveDateMap=buildEmployeeLeaveDateMap(leaves, monthStart, monthEnd);
   const rows=(emps||[]).map(emp=>{
     const er=(recs||[]).filter(r=>r.employee_id===emp.id);
@@ -2392,7 +2173,6 @@ async function delEmp(id) {
 
     toast('success', t('employee_title'), t('employee_removed'));
     const emps = await loadEmpList();
-    loadMainAmoCrmDiagram({showLoading:false, employees:emps||amoCrmActiveEmployees});
     loadDashboard();
     if (mVisible) loadMonthly();
   } catch (e) {
@@ -2459,7 +2239,6 @@ async function addEmp() {
     const createdId = result.employee_id || result.id || result.employee?.id || result.employee?.employee_id || result.data?.id || result.data?.employee_id;
     let emps = await loadEmpList();
 
-    loadMainAmoCrmDiagram({showLoading:false, employees:emps||amoCrmActiveEmployees});
     toast('success', t('employee_title'), t('employee_added'));
   } catch (e) {
     console.error('addEmp CATCH ERROR:', e);
