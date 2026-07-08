@@ -33,6 +33,7 @@ function fmtD(d){const p=getTzParts(d);return String(p.day).padStart(2,'0')+'.'+
 function todayISO(){const p=getTzParts();return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0');}
 function curM(){const p=getTzParts();return p.year+'-'+String(p.month).padStart(2,'0');}
 function fmtHM(d){const p=getTzParts(d);return String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');}
+function fmtHMS(d){const p=getTzParts(d);return String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0')+':'+String(p.second).padStart(2,'0');}
 function fmtSec(s){s=Math.max(0,Math.floor(s));return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor((s%3600)/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 function secToHMS(sec){return fmtSec(sec);}
 function fmtSecMM(s){s=Math.max(0,Math.floor(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
@@ -306,55 +307,10 @@ function isEditableTarget(target){
   return !!target?.closest?.('input, textarea, select, [contenteditable="true"]');
 }
 function blockClipboardEvent(e){
-  e.preventDefault();
-  e.stopPropagation();
-  if(e.clipboardData){
-    try{e.clipboardData.setData('text/plain','');}catch(_){}
-  }
-  return false;
+  return true;
 }
 function disableClipboardFeatures(){
-  try{
-    if(navigator.clipboard){
-      navigator.clipboard.writeText = async () => false;
-      navigator.clipboard.readText = async () => '';
-      navigator.clipboard.write = async () => false;
-      navigator.clipboard.read = async () => [];
-    }
-  }catch(e){
-    console.warn('Clipboard override failed:', e.message);
-  }
-  if(!disableClipboardFeatures.bound){
-    document.addEventListener('copy', blockClipboardEvent, true);
-    document.addEventListener('cut', blockClipboardEvent, true);
-    document.addEventListener('contextmenu', e=>{
-      e.preventDefault();
-      e.stopPropagation();
-    }, true);
-    document.addEventListener('dragstart', e=>{
-      e.preventDefault();
-      e.stopPropagation();
-    }, true);
-    document.addEventListener('selectstart', e=>{
-      if(!isEditableTarget(e.target)){
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    }, true);
-    document.addEventListener('keydown', e=>{
-      const key = (e.key || '').toLowerCase();
-      const blockedShortcut = (e.ctrlKey || e.metaKey) && (key === 'c' || key === 'x' || key === 'insert');
-      if(blockedShortcut){
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    }, true);
-    disableClipboardFeatures.bound = true;
-  }
-  document.querySelectorAll('[data-copy],[data-action="copy"],.copy-btn,.copy-button,button[onclick*="copy"],button[onclick*="clipboard"]').forEach(btn=>{
-    btn.disabled = true;
-    btn.style.display = 'none';
-  });
+  disableClipboardFeatures.bound = true;
 }
 disableClipboardFeatures();
 
