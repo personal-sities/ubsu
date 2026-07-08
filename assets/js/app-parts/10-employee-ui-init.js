@@ -16,6 +16,17 @@ function updateEmpStatusTag(){
 }
 function setEmpMonth(){document.getElementById('e_month').value=curM();loadHist();}
 
+function getEmployeeMonthlyLateCount(recs,m){
+  const lateDates=new Set((recs||[])
+    .filter(r=>Number(r.late_minutes||0)>0&&r.work_date)
+    .map(r=>r.work_date));
+  if(m===curM()){
+    const ss=typeof getLS==='function' ? getLS() : null;
+    if(Number(ss?.lateMin||0)>0)lateDates.add(todayISO());
+  }
+  return lateDates.size;
+}
+
 async function loadHist(){
   if(!CU)return;
   const m=document.getElementById('e_month').value||curM();
@@ -23,9 +34,8 @@ async function loadHist(){
   const{data:recs}=await sb.from('attendance').select('*').eq('employee_id',CU.id).gte('work_date',`${m}-01`).lte('work_date',`${m}-${String(dim).padStart(2,'0')}`).order('work_date');
   const tbody=document.getElementById('hbody');tbody.innerHTML='';
   let lc=0,totalAfkSec=0;
-  if(!recs||recs.length===0){tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">${t('no_data')}</td></tr>`;st('e_lc','0');st('e_afk_total','0 '+t('daqiqa'));return;}
+  if(!recs||recs.length===0){tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">${t('no_data')}</td></tr>`;st('e_lc',''+getEmployeeMonthlyLateCount([],m));st('e_afk_total','0 '+t('daqiqa'));return;}
   recs.forEach((r,i)=>{
-    if(r.late_minutes>0)lc++;
     totalAfkSec+=r.afk_seconds||0;
     const wh=Math.floor((r.work_seconds||0)/3600),wm=Math.floor(((r.work_seconds||0)%3600)/60);
     const lh=Math.floor((r.lunch_seconds||0)/3600),lm2=Math.floor(((r.lunch_seconds||0)%3600)/60);
@@ -46,6 +56,7 @@ async function loadHist(){
     tr.innerHTML=`<td>${i+1}</td><td style="font-family:var(--mono)">${r.work_date}</td><td style="font-family:var(--mono)">${r.start_time?r.start_time.substring(0,5):'-'}</td><td>${r.lunch_start?r.lunch_start.substring(0,5):'-'}</td><td>${r.lunch_end?r.lunch_end.substring(0,5):'-'}</td><td>${r.end_time?r.end_time.substring(0,5):'-'}</td><td>${r.late_minutes?r.late_minutes+' '+t('daq'):'-'}</td><td style="font-family:var(--mono)">${wh} ${t('soat')} ${wm} ${t('daqiqa')}</td><td>${lh} ${t('soat')} ${lm2} ${t('daqiqa')}</td><td style="color:${afkMin>0?'var(--danger)':'inherit'};font-family:var(--mono)">${afkMin>0?afkMin+' '+t('daq'):'—'}</td><td>${bdg}</td>`;
     tbody.appendChild(tr);
   });
+  lc=getEmployeeMonthlyLateCount(recs,m);
   st('e_lc',''+lc);st('e_afk_total',Math.floor(totalAfkSec/60)+' '+t('daqiqa'));
 }
 
