@@ -545,9 +545,9 @@
         <div class="tgrid">
           <div class="tb2"><h4 id="ewl">Ish vaqti</h4><div class="tv" id="tw">00:00:00</div></div>
           <div class="tb2"><h4 id="ell">Tushlik</h4><div class="tv" id="tl">00:00:00</div></div>
-          <div class="tb2"><h4 id="eprl">Namoz</h4><div class="tv" id="tp">00:00:00</div></div>
+          <div class="tb2 hidden" style="display:none"><h4 id="eprl">Namoz</h4><div class="tv" id="tp">00:00:00</div></div>
         </div>
-        <div class="break-tracker" id="prayerTracker" style="margin-bottom:8px;background:rgba(29,78,216,.06);border-color:rgba(29,78,216,.25)">
+        <div class="break-tracker hidden" id="prayerTracker" style="display:none;margin-bottom:8px;background:rgba(29,78,216,.06);border-color:rgba(29,78,216,.25)">
           <h4 id="prayer_next_lbl">🕌 Keyingi namoz vaqti</h4>
           <div class="break-info" style="margin-top:6px">
             <span id="nextPrayerName">—</span>
@@ -562,7 +562,7 @@
             <span id="breakLimit" style="color:var(--warn)">/ 30 daq</span>
           </div>
         </div>
-        <div class="afk-box" id="afkBox">
+        <div class="afk-box hidden" id="afkBox" style="display:none">
           <h4 id="afk_lbl">⚠️ Joyida bo'lmagan vaqt</h4>
           <div class="afk-total" id="afk_display">00:00:00</div>
           <div class="afk-count" id="afk_cnt_lbl">0 marta AFK</div>
@@ -577,8 +577,8 @@
           <div class="ii"><h4 id="ei2">Ish tugagan</h4><p id="i_e">-</p></div>
           <div class="ii"><h4 id="ei3">Tushlik boshlangan</h4><p id="i_ls">-</p></div>
           <div class="ii"><h4 id="ei4">Tushlik tugagan</h4><p id="i_le">-</p></div>
-          <div class="ii"><h4 id="ei5">Namoz boshlangan</h4><p id="i_ps">-</p></div>
-          <div class="ii"><h4 id="ei6">Namoz tugagan</h4><p id="i_pe">-</p></div>
+          <div class="ii hidden" style="display:none"><h4 id="ei5">Namoz boshlangan</h4><p id="i_ps">-</p></div>
+          <div class="ii hidden" style="display:none"><h4 id="ei6">Namoz tugagan</h4><p id="i_pe">-</p></div>
         </div>
         <div style="margin-top:10px;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border)">
           <div style="font-size:11px;color:var(--text2);margin-bottom:5px;font-weight:600" id="face_info_lbl">📷 Yuz nazorati</div>
@@ -619,7 +619,7 @@
         </div>
         <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;">
           <div><div style="font-size:11px;color:var(--text2)" id="el_lbl">Kechikishlar (oy):</div><div style="font-size:20px;font-weight:800;margin-top:4px;font-family:var(--mono)" id="e_lc">0</div></div>
-          <div><div style="font-size:11px;color:var(--text2)" id="afk_month_lbl">AFK (oy jami):</div><div style="font-size:20px;font-weight:800;margin-top:4px;color:var(--danger);font-family:var(--mono)" id="e_afk_total">0 daqiqa</div></div>
+          <div class="hidden" style="display:none"><div style="font-size:11px;color:var(--text2)" id="afk_month_lbl">AFK (oy jami):</div><div style="font-size:20px;font-weight:800;margin-top:4px;color:var(--danger);font-family:var(--mono)" id="e_afk_total">0 daqiqa</div></div>
         </div>
       </div>
     </div>
