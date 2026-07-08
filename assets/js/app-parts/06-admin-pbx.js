@@ -1388,6 +1388,7 @@ function setAttendanceTableMode(monthly){
     st('th5', t('mas_worked_days'));
     st('th_lunch_start', t('mas_late_count'));
     st('th_lunch_end', t('mas_absent_days'));
+    st('th_break', t('mas_break_time'));
     st('th_end', t('mas_late_time'));
     st('th8', t('mas_actions'));
   }else{
@@ -1398,6 +1399,7 @@ function setAttendanceTableMode(monthly){
     st('th5', t('th5'));
     st('th_lunch_start', t('mt_lunch_start'));
     st('th_lunch_end', t('mt_lunch_end'));
+    st('th_break', t('extra_break'));
     st('th_end', t('mt_end'));
     st('th7', t('th7'));
     st('th_afk', t('th_afk'));
@@ -1839,6 +1841,8 @@ async function loadAtt() {
       let lunchEnd = row.lunch_end ? row.lunch_end.substring(0, 5) : '-';
       let endTime = row.end_time ? row.end_time.substring(0, 5) : '-';
       let hrs = row.worked_seconds ? secToHMS(row.worked_seconds) : '-';
+      let breakSec = row.extra_break_seconds || 0;
+      let breakFmt = breakSec > 0 ? secToHMS(breakSec) : '-';
       let afkSec = row.afk_seconds || 0;
 
       if (status === 'keldi' || status === 'auto_ended' || status === 'yarim_kun') w++;
@@ -1880,6 +1884,7 @@ async function loadAtt() {
         <td style="font-family:var(--mono)">${arr}</td>
         <td style="font-family:var(--mono)">${lunchStart}</td>
         <td style="font-family:var(--mono)">${lunchEnd}</td>
+        <td style="font-family:var(--mono)">${breakFmt}</td>
         <td style="font-family:var(--mono)">${endTime}</td>
         <td style="font-family:var(--mono)">${hrs}</td>
         <td style="color:${afkSec > 0 ? 'var(--danger)' : 'var(--text2)'};">${afkFmt}</td>
@@ -1900,6 +1905,7 @@ async function loadAtt() {
           employee_login: row.employee_login,
           totalSec: 0,
           totalAfk: 0,
+          totalBreak: 0,
           totalLate: 0,
           dayCount: 0
         };
@@ -1907,6 +1913,7 @@ async function loadAtt() {
 
       grouped[id].totalSec += row.worked_seconds || 0;
       grouped[id].totalAfk += row.afk_seconds || 0;
+      grouped[id].totalBreak += row.extra_break_seconds || 0;
       grouped[id].totalLate += row.late_minutes || 0;
 
       if (row.work_date) grouped[id].dayCount++;
@@ -1918,6 +1925,7 @@ async function loadAtt() {
         : '—';
 
       const afkFmt2 = formatPenaltyAfk(emp.totalAfk);
+      const breakFmt2 = emp.totalBreak > 0 ? secToHMS(emp.totalBreak) : '-';
 
       const tr = document.createElement('tr');
       tr.dataset.name = (emp.employee_name || '').toLowerCase();
@@ -1931,6 +1939,7 @@ async function loadAtt() {
         <td>${emp.dayCount} ${t('kun')}</td>
         <td>-</td>
         <td>-</td>
+        <td style="font-family:var(--mono)">${breakFmt2}</td>
         <td>-</td>
         <td>${hrs2}</td>
         <td style="color:${emp.totalAfk > 0 ? 'var(--danger)' : 'var(--text2)'}">${afkFmt2}</td>
@@ -1959,6 +1968,15 @@ function filterAtt(){
   });
 }
 
+function syncMonthlyEmployeeFilter(emps=[]){
+  const sel=document.getElementById('monthly_employee_filter');
+  if(!sel)return 'all';
+  const previous=sel.value||'all';
+  sel.innerHTML=`<option value="all">${t('monthly_employee_all')}</option>`+(emps||[]).map(emp=>`<option value="${emp.id}">${emp.name||emp.login||'-'}</option>`).join('');
+  sel.value=(previous!=='all'&&(emps||[]).some(emp=>emp.id===previous))?previous:'all';
+  return sel.value||'all';
+}
+
 async function loadMonthly(){
   if(mVisible)setAttendanceTableMode(true);
   const month=document.getElementById('fmonth').value||curM();
@@ -1969,7 +1987,7 @@ async function loadMonthly(){
   const monthEnd=`${month}-${String(dim).padStart(2,'0')}`;
   const [{data:emps,error:empErr},{data:recs,error:recErr},leaves] = await Promise.all([
     sb.from('employees').select('id,name,login').eq('active',true).order('name'),
-    sb.from('attendance').select('employee_id,work_date,start_time,end_time,lunch_start,lunch_end,work_seconds,afk_seconds,late_minutes').gte('work_date',monthStart).lte('work_date',monthEnd).order('work_date'),
+    sb.from('attendance').select('employee_id,work_date,start_time,end_time,lunch_start,lunch_end,extra_break_start,extra_break_end,work_seconds,lunch_seconds,extra_break_seconds,extra_break_over_seconds,afk_seconds,late_minutes').gte('work_date',monthStart).lte('work_date',monthEnd).order('work_date'),
     fetchEmployeeLeavesInRange(monthStart, monthEnd)
   ]);
   if(empErr||recErr||!emps)return;
@@ -1979,16 +1997,18 @@ async function loadMonthly(){
     if(!recMap.has(r.employee_id))recMap.set(r.employee_id,[]);
     recMap.get(r.employee_id).push(r);
   });
-  let tL=0,tA=0,tH=0;
+  const selectedEmployeeId=syncMonthlyEmployeeFilter(emps||[]);
+  const reportEmployees=selectedEmployeeId==='all'?(emps||[]):(emps||[]).filter(emp=>emp.id===selectedEmployeeId);
+  let tL=0,tA=0,tH=0,tB=0;
   monthlyData=[];
   monthlyAttendanceSummary=[];
   const tbody=document.getElementById('mbody');
   const attBody=mVisible?document.getElementById('att_body'):null;
   tbody.innerHTML='';
   if(attBody)attBody.innerHTML='';
-  emps.forEach((emp,i)=>{
+  reportEmployees.forEach((emp,i)=>{
     const er=(recMap.get(emp.id)||[]).slice().sort((a,b)=>String(a.work_date).localeCompare(String(b.work_date)));
-    let late=0,came=0,half=0,sec=0,afkSec=0,totalLateMinutes=0;
+    let late=0,came=0,half=0,sec=0,breakSec=0,breakOverSec=0,afkSec=0,totalLateMinutes=0;
     const cameDates=new Set();
     const lateDetails=[];
     er.forEach(r=>{
@@ -2010,14 +2030,31 @@ async function loadMonthly(){
         });
       }
       if(r.work_seconds)sec+=r.work_seconds;
+      if(r.extra_break_seconds)breakSec+=r.extra_break_seconds;
+      if(r.extra_break_over_seconds)breakOverSec+=r.extra_break_over_seconds;
       if(r.afk_seconds)afkSec+=r.afk_seconds;
     });
     const leaveDates=leaveDateMap.get(emp.id)||new Set();
     const absentDates=getAbsenceDatesForMonth(month,cameDates,leaveDates);
     const abs=absentDates.length;
-    tL+=late;tA+=abs;tH+=sec;
+    const dailyRows=er.map(rec=>({
+      date:rec.work_date||'-',
+      start:rec.start_time?rec.start_time.substring(0,5):'-',
+      end:rec.end_time?rec.end_time.substring(0,5):'-',
+      work:rec.work_seconds?secToHMS(rec.work_seconds):'-',
+      lunch:rec.lunch_seconds?secToHMS(rec.lunch_seconds):'-',
+      breakTime:rec.extra_break_seconds?secToHMS(rec.extra_break_seconds):'-',
+      late:rec.late_minutes||0,
+      status:computeStatusByTimes(
+        rec.start_time?rec.start_time.substring(0,5):null,
+        rec.end_time?rec.end_time.substring(0,5):null,
+        rec.late_minutes||0,
+        rec.work_seconds||0
+      )
+    }));
+    tL+=late;tA+=abs;tH+=sec;tB+=breakSec;
     if(er.length===0){
-      monthlyData.push({date:'-',name:emp.name,start:'-',hours:'-',lunchStart:'-',lunchEnd:'-',end:'-'});
+      monthlyData.push({date:'-',name:emp.name,start:'-',hours:'-',lunchStart:'-',lunchEnd:'-',breakTime:'-',end:'-'});
     }else{
       er.forEach(rec=>{
         monthlyData.push({
@@ -2027,6 +2064,7 @@ async function loadMonthly(){
           hours:rec.work_seconds?secToHMS(rec.work_seconds):'-',
           lunchStart:rec.lunch_start?rec.lunch_start.substring(0,5):'-',
           lunchEnd:rec.lunch_end?rec.lunch_end.substring(0,5):'-',
+          breakTime:rec.extra_break_seconds?secToHMS(rec.extra_break_seconds):'-',
           end:rec.end_time?rec.end_time.substring(0,5):'-'
         });
       });
@@ -2038,20 +2076,23 @@ async function loadMonthly(){
       came,
       half,
       late,
+      breakSec,
+      breakOverSec,
       totalLateMinutes,
       absentDates,
-      lateDetails
+      lateDetails,
+      dailyRows
     });
     er.forEach(rec=>{
       const tr=document.createElement('tr');
       tr.dataset.name=(emp.name||'').toLowerCase();
-      tr.innerHTML=`<td>${tbody.children.length+1}</td><td style="font-family:var(--mono)">${rec.work_date||'-'}</td><td>${emp.name}</td><td style="font-family:var(--mono)">${rec.start_time?rec.start_time.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.work_seconds?secToHMS(rec.work_seconds):'-'}</td><td style="font-family:var(--mono)">${rec.lunch_start?rec.lunch_start.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.lunch_end?rec.lunch_end.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.end_time?rec.end_time.substring(0,5):'-'}</td>`;
+      tr.innerHTML=`<td>${tbody.children.length+1}</td><td style="font-family:var(--mono)">${rec.work_date||'-'}</td><td>${emp.name}</td><td style="font-family:var(--mono)">${rec.start_time?rec.start_time.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.work_seconds?secToHMS(rec.work_seconds):'-'}</td><td style="font-family:var(--mono)">${rec.lunch_start?rec.lunch_start.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.lunch_end?rec.lunch_end.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.extra_break_seconds?secToHMS(rec.extra_break_seconds):'-'}</td><td style="font-family:var(--mono)">${rec.end_time?rec.end_time.substring(0,5):'-'}</td>`;
       tbody.appendChild(tr);
     });
     if(er.length===0){
       const tr=document.createElement('tr');
       tr.dataset.name=(emp.name||'').toLowerCase();
-      tr.innerHTML=`<td>${tbody.children.length+1}</td><td>-</td><td>${emp.name}</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>`;
+      tr.innerHTML=`<td>${tbody.children.length+1}</td><td>-</td><td>${emp.name}</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>`;
       tbody.appendChild(tr);
     }
 
@@ -2059,11 +2100,11 @@ async function loadMonthly(){
       const summaryTr=document.createElement('tr');
       summaryTr.dataset.name=(emp.name||'').toLowerCase();
       summaryTr.dataset.st='monthly';
-      summaryTr.innerHTML=`<td>${i+1}</td><td>${emp.name||'-'}</td><td style="font-family:var(--mono)">${emp.login||'-'}</td><td style="font-family:var(--mono)">${month}</td><td>${came} ${t('kun')}</td><td>${late} ${t('marta')}</td><td>${abs} ${t('kun')}</td><td>${totalLateMinutes>0?`${totalLateMinutes} ${t('daq')}`:'-'}</td><td><button class="bsm bsm-g" onclick="openMonthlyAttendanceDetails('${emp.id}')">${t('details')}</button></td>`;
+      summaryTr.innerHTML=`<td>${i+1}</td><td>${emp.name||'-'}</td><td style="font-family:var(--mono)">${emp.login||'-'}</td><td style="font-family:var(--mono)">${month}</td><td>${came} ${t('kun')}</td><td>${late} ${t('marta')}</td><td>${abs} ${t('kun')}</td><td style="font-family:var(--mono)">${breakSec>0?secToHMS(breakSec):'-'}</td><td>${totalLateMinutes>0?`${totalLateMinutes} ${t('daq')}`:'-'}</td><td><button class="bsm bsm-g" onclick="openMonthlyAttendanceDetails('${emp.id}')">${t('details')}</button></td>`;
       attBody.appendChild(summaryTr);
     }
   });
-  st('me',''+emps.length);st('ml',''+tL);st('ma',''+tA);st('mh',formatHm(tH));
+  st('me',''+reportEmployees.length);st('ml',''+tL);st('ma',''+tA);st('mh',formatHm(tH));st('mbreak',formatHm(tB));
   filterAtt();
 }
 
@@ -2079,7 +2120,17 @@ function openMonthlyAttendanceDetails(employeeId){
   const lateHtml=row.lateDetails.length
     ? `<div class="tbl-wrap"><table class="tbl" style="min-width:480px;"><thead><tr><th>${t('detail_date')}</th><th>${t('detail_late_minutes')}</th><th>${t('detail_status')}</th></tr></thead><tbody>${row.lateDetails.map(item=>`<tr><td style="font-family:var(--mono)">${fmtD(new Date(item.date+'T12:00:00'))}</td><td>${item.minutes} ${t('daq')}</td><td>${item.status}</td></tr>`).join('')}</tbody></table></div>`
     : `<div style="color:var(--success);font-size:12px">${t('monthly_detail_no_lates')}</div>`;
+  const dailyHtml=row.dailyRows.length
+    ? `<div class="tbl-wrap"><table class="tbl" style="min-width:760px;"><thead><tr><th>${t('detail_date')}</th><th>${t('detail_start')}</th><th>${t('detail_end')}</th><th>${t('detail_work')}</th><th>${t('detail_lunch')}</th><th>${t('extra_break')}</th><th>${t('detail_late_minutes')}</th><th>${t('detail_status')}</th></tr></thead><tbody>${row.dailyRows.map(item=>`<tr><td style="font-family:var(--mono)">${item.date==='-'?'-':fmtD(new Date(item.date+'T12:00:00'))}</td><td style="font-family:var(--mono)">${item.start}</td><td style="font-family:var(--mono)">${item.end}</td><td style="font-family:var(--mono)">${item.work}</td><td style="font-family:var(--mono)">${item.lunch}</td><td style="font-family:var(--mono)">${item.breakTime}</td><td>${item.late>0?`${item.late} ${t('daq')}`:'-'}</td><td>${item.status==='yarim_kun'?t('b_half'):item.status==='kechikkan'?t('b_late'):item.status==='keldi'?t('b_came'):t('b_abs')}</td></tr>`).join('')}</tbody></table></div>`
+    : `<div style="color:var(--text3);font-size:12px">${t('no_data')}</div>`;
   body.innerHTML=`
+    <div class="mst" style="margin-bottom:16px;">
+      <div class="ms"><h5>${t('mas_worked_days')}</h5><div class="v">${row.came}</div></div>
+      <div class="ms"><h5>${t('mas_late_count')}</h5><div class="v">${row.late}</div></div>
+      <div class="ms"><h5>${t('mas_absent_days')}</h5><div class="v">${row.absentDates.length}</div></div>
+      <div class="ms"><h5>${t('extra_break_total')}</h5><div class="v">${row.breakSec>0?secToHMS(row.breakSec):'0'}</div></div>
+      <div class="ms"><h5>${t('extra_break_over')}</h5><div class="v">${row.breakOverSec>0?secToHMS(row.breakOverSec):'0'}</div></div>
+    </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
       <div class="box" style="margin:0;">
         <div class="btitle" style="margin-bottom:10px;">${t('monthly_detail_absent_dates')}</div>
@@ -2089,6 +2140,10 @@ function openMonthlyAttendanceDetails(employeeId){
         <div class="btitle" style="margin-bottom:10px;">${t('monthly_detail_late_days')}</div>
         ${lateHtml}
       </div>
+    </div>
+    <div class="box" style="margin:16px 0 0;">
+      <div class="btitle" style="margin-bottom:10px;">${t('monthly_detail_daily')}</div>
+      ${dailyHtml}
     </div>
   `;
   document.getElementById('m_month_att_detail').classList.remove('hidden');
