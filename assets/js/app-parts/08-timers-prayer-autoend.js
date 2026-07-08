@@ -13,14 +13,19 @@ function startLT(){
   lIv=setInterval(()=>{let tot=lAccum;if(lStart)tot+=Math.floor((tzNow()-lStart)/1000);setTV(tot,'tl');updateBreakBar();},1000);
 }
 function stopLT(){if(lIv){clearInterval(lIv);lIv=null;}}
+function startBT(){
+  stopBT();
+  extraBreakIv=setInterval(()=>{setTV(currentExtraBreakSeconds(),'tbr');updateBreakBar();saveLS();},1000);
+}
+function stopBT(){if(extraBreakIv){clearInterval(extraBreakIv);extraBreakIv=null;}}
 function startPT(){stopPT();pIv=setInterval(()=>{let tot=prayerAccum;if(prayerStart)tot+=Math.floor((tzNow()-prayerStart)/1000);setTV(tot,'tp');saveLS();},1000);}
 function stopPT(){if(pIv){clearInterval(pIv);pIv=null;}}
 function setTV(sec,id){const e=document.getElementById(id);if(e)e.textContent=fmtSec(sec);}
-function stopAll(){stopWT();stopLT();}
+function stopAll(){stopWT();stopLT();stopBT();stopPT();}
 
 function updateBreakBar(){
   const bar=document.getElementById('breakBar');const used=document.getElementById('breakUsed');
-  const total=breakSeconds;
+  const total=typeof currentExtraBreakSeconds==='function'?currentExtraBreakSeconds():0;
   const pct=Math.min(100,(total/BREAK_LIMIT_SEC)*100);
   if(bar){bar.style.width=pct+'%';bar.classList.toggle('over',total>BREAK_LIMIT_SEC);}
   if(used)used.textContent=Math.floor(total/60)+' daq';
@@ -198,8 +203,8 @@ function startAutoEndCheck(){
   if(autoEndIv)clearInterval(autoEndIv);
   autoEndIv=setInterval(()=>{
     if(autoEndDone)return;
-    if(!['working','lunch','paused'].includes(empState))return;
+    if(!['working','lunch','break','paused'].includes(empState))return;
     if(getTzTotalMinutes()>=((AUTO_END_HOUR*60)+AUTO_END_MIN))empEnd(true);
   },30000);
-  if(!autoEndDone&&['working','lunch','paused'].includes(empState)&&getTzTotalMinutes()>=((AUTO_END_HOUR*60)+AUTO_END_MIN))empEnd(true);
+  if(!autoEndDone&&['working','lunch','break','paused'].includes(empState)&&getTzTotalMinutes()>=((AUTO_END_HOUR*60)+AUTO_END_MIN))empEnd(true);
 }
