@@ -56,9 +56,38 @@ let pendingAutoEndSave = false;
 function todayBreakSec(){return breakSeconds;}
 
 function getLS(){return JSON.parse(localStorage.getItem('aloqa_emp_state')||'null');}
+function normalizeAttendanceTime(v){
+  if(!v||v==='-')return null;
+  const parts=String(v).split(':');
+  if(parts.length<2)return null;
+  const h=Math.trunc(Number(parts[0])),m=Math.trunc(Number(parts[1])),s=parts.length>2?Math.trunc(Number(parts[2])):0;
+  if(!Number.isFinite(h)||!Number.isFinite(m)||!Number.isFinite(s))return null;
+  if(h<0||h>23||m<0||m>59||s<0||s>59)return null;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function getAttendanceTime(ss, exactKey, displayKey){
+  return normalizeAttendanceTime(ss?.[exactKey]) || normalizeAttendanceTime(ss?.[displayKey]);
+}
+function rememberAttendanceTime(displayKey, exactKey, date){
+  const display=fmtHM(date);
+  st(displayKey,display);
+  const ss=getLS()||{};
+  ss[displayKey]=display;
+  ss[exactKey]=fmtHMS(date);
+  localStorage.setItem('aloqa_emp_state',JSON.stringify(ss));
+}
+async function upsertAttendance(payload,{showError=false}={}){
+  const {error}=await sb.from('attendance').upsert(payload,{onConflict:'employee_id,work_date'});
+  if(error){
+    console.warn('attendance save:', error.message || error);
+    if(showError)toast('error',t('error_title'),error.message||t('attendance_load_error'));
+    return false;
+  }
+  return true;
+}
 function saveLS(){
   const ss=getLS()||{};
-  const data={date:todayISO(),state:empState,wAccum,lAccum,prayerAccum,afkSeconds,afkCount,breakSeconds,wStartISO:wStart?wStart.toISOString():null,lStartISO:lStart?lStart.toISOString():null,prayerStartISO:prayerStart?prayerStart.toISOString():null,afkStartISO:currentAfkStart?currentAfkStart.toISOString():null,i_s:document.getElementById('i_s')?.textContent||'-',i_e:document.getElementById('i_e')?.textContent||'-',i_ls:document.getElementById('i_ls')?.textContent||'-',i_le:document.getElementById('i_le')?.textContent||'-',i_ps:document.getElementById('i_ps')?.textContent||'-',i_pe:document.getElementById('i_pe')?.textContent||'-',lateMin:ss.lateMin||0,autoEndDone:autoEndDone||false,lastSavedISO:tzNow().toISOString()};
+  const data={date:todayISO(),state:empState,wAccum,lAccum,prayerAccum,afkSeconds,afkCount,breakSeconds,wStartISO:wStart?wStart.toISOString():null,lStartISO:lStart?lStart.toISOString():null,prayerStartISO:prayerStart?prayerStart.toISOString():null,afkStartISO:currentAfkStart?currentAfkStart.toISOString():null,i_s:document.getElementById('i_s')?.textContent||'-',i_e:document.getElementById('i_e')?.textContent||'-',i_ls:document.getElementById('i_ls')?.textContent||'-',i_le:document.getElementById('i_le')?.textContent||'-',i_ps:document.getElementById('i_ps')?.textContent||'-',i_pe:document.getElementById('i_pe')?.textContent||'-',startTime:getAttendanceTime(ss,'startTime','i_s'),endTime:getAttendanceTime(ss,'endTime','i_e'),lunchStartTime:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunchEndTime:getAttendanceTime(ss,'lunchEndTime','i_le'),prayerStartTime:getAttendanceTime(ss,'prayerStartTime','i_ps'),prayerEndTime:getAttendanceTime(ss,'prayerEndTime','i_pe'),lateMin:ss.lateMin||0,autoEndDone:autoEndDone||false,lastSavedISO:tzNow().toISOString()};
   localStorage.setItem('aloqa_emp_state',JSON.stringify(data));
 }
 function getTodayAutoEndDate(){
@@ -90,6 +119,7 @@ async function restoreLS(){
         ss.state='ended';ss.wAccum=wAccum;ss.lAccum=lAccum;ss.prayerAccum=prayerAccum;
         ss.wStartISO=null;ss.lStartISO=null;ss.prayerStartISO=null;ss.afkStartISO=null;
         ss.i_e=ss.i_e&&ss.i_e!=='-'?ss.i_e:fmtHM(autoEndAt);
+        ss.endTime=ss.endTime||fmtHMS(autoEndAt);
         ss.autoEndDone=true;ss.lastSavedISO=tzNow().toISOString();
         localStorage.setItem('aloqa_emp_state',JSON.stringify(ss));
         pendingAutoEndSave=true;
@@ -111,7 +141,7 @@ async function restoreLS(){
 //  EMPLOYEE INIT
 // ============================================================
 async function initEmp(){
-  await restoreLS();setEmpMonth();loadHist();updateDates();
+  const restored=await restoreLS();setEmpMonth();loadHist();updateDates();
   document.getElementById('m_welcome').classList.remove('hidden');
   const mt=document.getElementById('e_mtag');if(mt)mt.textContent=curM();
   await loadFaceControlSettings();
@@ -121,6 +151,8 @@ async function initEmp(){
     pendingAutoEndSave=false;
     saveAtt(true).catch(e=>console.warn('auto-end restore save:',e.message||e));
   }
+  if(restored&&empState==='ended')saveAtt(autoEndDone).catch(e=>console.warn('attendance restore save:',e.message||e));
+  else if(restored&&empState!=='not_started')savePartial().catch(e=>console.warn('attendance restore save:',e.message||e));
   loadTodayLunchPlan().then(()=>ensureLunchShiftPrompt());
   if(Notification.permission==='granted'){scheduleReminders();}
   subscribeEmployeeRealtime();
@@ -141,28 +173,28 @@ async function empStart(){
     return;
   }
   wStart=tzNow();empState='working';
-  st('i_s',fmtHM(wStart));
+  rememberAttendanceTime('i_s','startTime',wStart);
   const lm=computeLateMinutesFromDate(wStart);
   const el=document.getElementById('e_ltag');if(el)el.textContent=t('lt_pre')+' '+lm+' '+t('lt_u');
   const ss=getLS()||{};ss.lateMin=lm;localStorage.setItem('aloqa_emp_state',JSON.stringify(ss));
   await loadFaceControlSettings();
   updateEmpBtns();updateEmpStatusTag();startWT();saveLS();maybeStartFaceDetection();
-  await savePartial();
+  if(!(await savePartial(true)))return;
   toast('success',t('bs'),t('work_started_success'));
 }
 async function empLunch(){
   if(empState==='lunch'){await empBackLunch();return;}
   if(empState!=='working')return;
   lStart=tzNow();if(wStart)wAccum+=Math.floor((lStart-wStart)/1000);wStart=null;
-  empState='lunch';st('i_ls',fmtHM(lStart));stopWT();pauseFaceMonitoringForBreak();updateEmpBtns();updateEmpStatusTag();startLT();saveLS();
-  await savePartial();
+  empState='lunch';rememberAttendanceTime('i_ls','lunchStartTime',lStart);stopWT();pauseFaceMonitoringForBreak();updateEmpBtns();updateEmpStatusTag();startLT();saveLS();
+  if(!(await savePartial(true)))return;
   toast('info',t('lunch_title'),`${t('lunch_rest_msg')} 🍽️`);
 }
 async function empBackLunch(){
   if(empState!=='lunch')return;
   const now=tzNow();if(lStart)lAccum+=Math.floor((now-lStart)/1000);lStart=null;
-  st('i_le',fmtHM(now));empState='working';wStart=now;stopLT();resumeFaceMonitoringAfterBreak();updateEmpBtns();updateEmpStatusTag();startWT();saveLS();
-  await savePartial();
+  rememberAttendanceTime('i_le','lunchEndTime',now);empState='working';wStart=now;stopLT();resumeFaceMonitoringAfterBreak();updateEmpBtns();updateEmpStatusTag();startWT();saveLS();
+  if(!(await savePartial(true)))return;
   toast('success',t('lunch_title'),`${t('work_continues')} 💼`);
 }
 async function empPrayer(){
@@ -172,11 +204,11 @@ async function empPrayer(){
   if(wStart)wAccum+=Math.floor((prayerStart-wStart)/1000);
   wStart=null;
   empState='prayer';
-  st('i_ps',fmtHM(prayerStart));
+  rememberAttendanceTime('i_ps','prayerStartTime',prayerStart);
   stopWT();
   pauseFaceMonitoringForBreak();
   updateEmpBtns();updateEmpStatusTag();startPT();saveLS();
-  await savePartial();
+  if(!(await savePartial(true)))return;
   toast('info',t('prayer_btn'),t('prayer_started_success'));
 }
 async function empBackPrayer(){
@@ -184,13 +216,13 @@ async function empBackPrayer(){
   const now=tzNow();
   if(prayerStart)prayerAccum+=Math.floor((now-prayerStart)/1000);
   prayerStart=null;
-  st('i_pe',fmtHM(now));
+  rememberAttendanceTime('i_pe','prayerEndTime',now);
   empState='working';
   wStart=now;
   stopPT();
   resumeFaceMonitoringAfterBreak();
   updateEmpBtns();updateEmpStatusTag();startWT();saveLS();
-  await savePartial();
+  if(!(await savePartial(true)))return;
   toast('success',t('prayer_btn'),`${t('work_continues')} 💼`);
 }
 async function empContinue(){
@@ -199,7 +231,7 @@ async function empContinue(){
   wStart=tzNow();
   document.getElementById('bc').classList.add('hidden');
   updateEmpBtns();updateEmpStatusTag();startWT();saveLS();maybeStartFaceDetection();
-  await savePartial();
+  if(!(await savePartial(true)))return;
 }
 function pauseWorkForPlatformExit({saveRemote=false}={}){
   if(!CU||CU.role!=='employee'||empState!=='working')return false;
@@ -247,31 +279,39 @@ async function empEnd(auto=false){
   if(empState==='working'&&wStart)wAccum+=Math.floor((now-wStart)/1000);
   if(empState==='lunch'&&lStart)lAccum+=Math.floor((now-lStart)/1000);
   if(empState==='prayer'&&prayerStart)prayerAccum+=Math.floor((now-prayerStart)/1000);
-  wStart=null;lStart=null;prayerStart=null;empState='ended';st('i_e',fmtHM(now));
+  wStart=null;lStart=null;prayerStart=null;empState='ended';rememberAttendanceTime('i_e','endTime',now);
   stopWT();stopLT();stopPT();document.getElementById('bc').classList.add('hidden');
   setTV(wAccum,'tw');setTV(lAccum,'tl');setTV(prayerAccum,'tp');updateEmpBtns();updateEmpStatusTag();stopFaceDetection();
-  if(auto){autoEndDone=true;document.getElementById('m_auto_end').classList.remove('hidden');document.getElementById('autoEndBanner').style.display='block';setTimeout(()=>document.getElementById('autoEndBanner').style.display='none',5000);}
+  if(auto)autoEndDone=true;
+  saveLS();
+  if(!(await saveAtt(auto,true)))return;
+  if(auto){document.getElementById('m_auto_end').classList.remove('hidden');document.getElementById('autoEndBanner').style.display='block';setTimeout(()=>document.getElementById('autoEndBanner').style.display='none',5000);}
   else toast('success',t('be'),t('day_finished_success'));
-  saveLS();await saveAtt(auto);
 }
-async function saveAtt(autoEnded=false){
-  if(!CU)return;
+async function saveAtt(autoEnded=false,showError=false){
+  if(!CU)return false;
   const today=todayISO();const ss=getLS()||{};const lm=ss.lateMin||0;
-  const startHM = ss.i_s&&ss.i_s!=='-'?ss.i_s:null;
-  const endHM = ss.i_e&&ss.i_e!=='-'?ss.i_e:null;
-  const payload={employee_id:CU.id,work_date:today,start_time:startHM?startHM+':00':null,end_time:endHM?endHM+':00':null,lunch_start:ss.i_ls&&ss.i_ls!=='-'?ss.i_ls+':00':null,lunch_end:ss.i_le&&ss.i_le!=='-'?ss.i_le+':00':null,work_seconds:wAccum,lunch_seconds:lAccum,afk_seconds:getPenaltyAfkSeconds(afkSeconds),afk_count:afkCount,late_minutes:lm,status:computeStatusByTimes(startHM,endHM,lm,wAccum),auto_ended:autoEnded};
-  await sb.from('attendance').upsert(payload,{onConflict:'employee_id,work_date'});
+  const startTime=getAttendanceTime(ss,'startTime','i_s');
+  const endTime=getAttendanceTime(ss,'endTime','i_e');
+  const startHM=startTime?startTime.substring(0,5):null;
+  const endHM=endTime?endTime.substring(0,5):null;
+  const payload={employee_id:CU.id,work_date:today,start_time:startTime,end_time:endTime,lunch_start:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunch_end:getAttendanceTime(ss,'lunchEndTime','i_le'),work_seconds:wAccum,lunch_seconds:lAccum,afk_seconds:getPenaltyAfkSeconds(afkSeconds),afk_count:afkCount,late_minutes:lm,status:computeStatusByTimes(startHM,endHM,lm,wAccum),auto_ended:autoEnded};
+  if(!(await upsertAttendance(payload,{showError})))return false;
   loadHist();
+  return true;
 }
-async function savePartial(){
-  if(!CU||empState==='not_started')return;
+async function savePartial(showError=false){
+  if(!CU||empState==='not_started')return false;
   const today=todayISO();const ss=getLS()||{};const lm=ss.lateMin||0;
   let cw=wAccum;if(empState==='working'&&wStart)cw+=Math.floor((tzNow()-wStart)/1000);
   let cl=lAccum;if(empState==='lunch'&&lStart)cl+=Math.floor((tzNow()-lStart)/1000);
   let afkNow=afkSeconds;
-  const startHM = ss.i_s&&ss.i_s!=='-'?ss.i_s:null;
-  const payload={employee_id:CU.id,work_date:today,start_time:startHM?startHM+':00':null,end_time:ss.i_e&&ss.i_e!=='-'?ss.i_e+':00':null,lunch_start:ss.i_ls&&ss.i_ls!=='-'?ss.i_ls+':00':null,lunch_end:ss.i_le&&ss.i_le!=='-'?ss.i_le+':00':null,work_seconds:cw,lunch_seconds:cl,afk_seconds:getPenaltyAfkSeconds(afkNow),afk_count:afkCount,late_minutes:lm,status:computeStatusByTimes(startHM,ss.i_e&&ss.i_e!=='-'?ss.i_e:null,lm,cw),auto_ended:false};
-  await sb.from('attendance').upsert(payload,{onConflict:'employee_id,work_date'});
+  const startTime=getAttendanceTime(ss,'startTime','i_s');
+  const endTime=getAttendanceTime(ss,'endTime','i_e');
+  const startHM=startTime?startTime.substring(0,5):null;
+  const endHM=endTime?endTime.substring(0,5):null;
+  const payload={employee_id:CU.id,work_date:today,start_time:startTime,end_time:endTime,lunch_start:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunch_end:getAttendanceTime(ss,'lunchEndTime','i_le'),work_seconds:cw,lunch_seconds:cl,afk_seconds:getPenaltyAfkSeconds(afkNow),afk_count:afkCount,late_minutes:lm,status:computeStatusByTimes(startHM,endHM,lm,cw),auto_ended:false};
+  return upsertAttendance(payload,{showError});
 }
 
 // ============================================================
