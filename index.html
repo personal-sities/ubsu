@@ -213,7 +213,7 @@
                   <th>#</th><th id="th1">Ism familiya</th><th id="th2">Login</th>
                   <th id="th4">O'zgartirish</th><th id="th5">Kelgan vaqti</th>
                   <th id="th_lunch_start">Tushlik boshlagan</th><th id="th_lunch_end">Tushlik tugagan</th>
-                  <th id="th_end">Ish tugagan</th><th id="th7">Ishlagan soat</th>
+                  <th id="th_break">Tanaffus</th><th id="th_end">Ish tugagan</th><th id="th7">Ishlagan soat</th>
                   <th id="th_afk">AFK vaqti</th><th id="th8">Status</th>
                 </tr></thead>
                 <tbody id="att_body"></tbody>
@@ -225,6 +225,9 @@
               <span class="btitle" id="mth_t" style="margin:0">Oylik hisobot</span>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <span style="font-size:11px;color:var(--text3)" id="mlbl"></span>
+                <select id="monthly_employee_filter" onchange="loadMonthly()" style="font-size:12px;padding:7px 9px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--input-bg);color:var(--text);min-width:190px;">
+                  <option value="all">Barcha hodimlar</option>
+                </select>
                 <button class="btn-export" onclick="exportExcel()">📊 Excel</button>
                 <button class="btn-export" onclick="exportPDF()">📄 PDF</button>
               </div>
@@ -234,13 +237,14 @@
               <div class="ms"><h5 id="ms2">Kechikishlar</h5><div class="v" id="ml">0</div></div>
               <div class="ms"><h5 id="ms3">Kelmagan</h5><div class="v" id="ma">0</div></div>
               <div class="ms"><h5 id="ms4">Ish soati</h5><div class="v" id="mh">0</div></div>
+              <div class="ms"><h5 id="ms_break">Tanaffus</h5><div class="v" id="mbreak">0</div></div>
             </div>
             <div class="tbl-wrap">
               <table class="tbl" id="monthly_table" style="min-width:900px;">
                 <thead><tr>
                   <th>#</th><th id="mt_date">Sana</th><th id="mt1">Ism familiya</th><th id="mt2">Kelgan vaqti</th>
                   <th id="mt_worked">Ishlagan soat</th><th id="mt_lunch_start">Tushlik boshlagan</th>
-                  <th id="mt_lunch_end">Tushlik tugagan</th><th id="mt_end">Ish tugagan</th>
+                  <th id="mt_lunch_end">Tushlik tugagan</th><th id="mt_break">Tanaffus</th><th id="mt_end">Ish tugagan</th>
                 </tr></thead>
                 <tbody id="mbody"></tbody>
               </table>
@@ -538,6 +542,7 @@
         <div class="abtns">
           <button class="abtn ast" id="bs" onclick="empStart()">Boshlash</button>
           <button class="abtn alu" id="bl" onclick="empLunch()">Tushlik</button>
+          <button class="abtn abr" id="bbr" onclick="empExtraBreak()">Tanaffus</button>
           <button class="abtn apr" id="bp" onclick="empPrayer()">Namoz</button>
           <button class="abtn aen" id="be" onclick="empEnd()">Yakunlash</button>
         </div>
@@ -545,6 +550,7 @@
         <div class="tgrid">
           <div class="tb2"><h4 id="ewl">Ish vaqti</h4><div class="tv" id="tw">00:00:00</div></div>
           <div class="tb2"><h4 id="ell">Tushlik</h4><div class="tv" id="tl">00:00:00</div></div>
+          <div class="tb2"><h4 id="ebrl">Tanaffus</h4><div class="tv" id="tbr">00:00:00</div></div>
           <div class="tb2 hidden" style="display:none"><h4 id="eprl">Namoz</h4><div class="tv" id="tp">00:00:00</div></div>
         </div>
         <div class="break-tracker hidden" id="prayerTracker" style="display:none;margin-bottom:8px;background:rgba(29,78,216,.06);border-color:rgba(29,78,216,.25)">
@@ -577,6 +583,8 @@
           <div class="ii"><h4 id="ei2">Ish tugagan</h4><p id="i_e">-</p></div>
           <div class="ii"><h4 id="ei3">Tushlik boshlangan</h4><p id="i_ls">-</p></div>
           <div class="ii"><h4 id="ei4">Tushlik tugagan</h4><p id="i_le">-</p></div>
+          <div class="ii"><h4 id="ei_break_start">Tanaffus boshlangan</h4><p id="i_br_s">-</p></div>
+          <div class="ii"><h4 id="ei_break_end">Tanaffus tugagan</h4><p id="i_br_e">-</p></div>
           <div class="ii hidden" style="display:none"><h4 id="ei5">Namoz boshlangan</h4><p id="i_ps">-</p></div>
           <div class="ii hidden" style="display:none"><h4 id="ei6">Namoz tugagan</h4><p id="i_pe">-</p></div>
         </div>
@@ -612,7 +620,7 @@
               <th id="ht3">Tushlik bosh.</th><th id="ht4">Tushlik tug.</th>
               <th id="ht5">Tugagan</th><th id="ht6">Kechikish</th>
               <th id="ht7">Ish vaqti</th><th id="ht8">Tushlik</th>
-              <th id="ht_afk">AFK</th><th id="ht9">Status</th>
+              <th id="ht_break">Tanaffus</th><th id="ht_afk">AFK</th><th id="ht9">Status</th>
             </tr></thead>
             <tbody id="hbody"></tbody>
           </table>
