@@ -419,6 +419,7 @@ input[type="month"]::-webkit-calendar-picker-indicator { opacity:.75; }
 .abtn:disabled { opacity:.4; cursor:not-allowed; transform:none !important; }
 .ast { background:linear-gradient(135deg,var(--success),#27ae60); color:#fff; }
 .alu { background:linear-gradient(135deg,var(--warn),#e67e22); color:#fff; }
+.abr { background:linear-gradient(135deg,#14b8a6,#0f766e); color:#fff; }
 .aen { background:linear-gradient(135deg,var(--danger),#c0392b); color:#fff; }
 .aco { background:linear-gradient(135deg,var(--accent),#3a6ee0); color:#fff; width:100%; display:block; padding:12px; margin-bottom:12px; border:none; border-radius:var(--radius-sm); font-size:13px; font-weight:700; cursor:pointer; font-family:var(--font); transition:var(--transition); }
 .aco:hover { transform:translateY(-1px); }
