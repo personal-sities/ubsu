@@ -72,7 +72,7 @@ function speakAfkVoiceWarning(){afkVoiceCount=0;}
 
 function scheduleFaceCheck(ms){
   if(faceCheckTimer){clearTimeout(faceCheckTimer);faceCheckTimer=null;}
-  if(!faceControlEnabled||!faceApiLoaded||['ended','not_started','paused','lunch','prayer'].includes(empState))return;
+  if(!faceControlEnabled||!faceApiLoaded||['ended','not_started','paused','lunch','break','prayer'].includes(empState))return;
   const cooldownRemaining=lastStableFaceDetectedAt
     ? Math.max(0, FACE_FOUND_COOLDOWN_INTERVAL-(Date.now()-lastStableFaceDetectedAt))
     : 0;
@@ -168,7 +168,7 @@ async function startFaceDetection(){
     updateFaceControlEmployeeUI();
     return;
   }
-  if(['ended','lunch','prayer'].includes(empState))return;
+  if(['ended','lunch','break','prayer'].includes(empState))return;
   const statusEl=document.getElementById('face_status_inline');
   const setStatus=(txt)=>{if(statusEl)statusEl.textContent=txt;};
   setStatus('⏳ Yuklanmoqda...');
@@ -191,7 +191,7 @@ async function startFaceDetection(){
 // ── FACE CHECK — TO'LIQ QAYTA YOZILGAN ────────────────────
 async function runFaceCheck(){
   if(!faceControlEnabled)return;
-  if(['lunch','prayer','not_started','ended'].includes(empState)){
+  if(['lunch','break','prayer','not_started','ended'].includes(empState)){
     scheduleFaceCheck(FACE_CHECK_INTERVAL);
     return;
   }
@@ -741,7 +741,7 @@ async function startFaceDetection(){
   if(regBox)regBox.style.display='none';
 
   if(empState!=='working'){
-    const idleText=empState==='paused'?t('paused'):(empState==='lunch'?t('st2'):(empState==='prayer'?t('prayer_btn'):t('st0')));
+    const idleText=empState==='paused'?t('paused'):(empState==='lunch'?t('st2'):(empState==='break'?t('break_state'):(empState==='prayer'?t('prayer_btn'):t('st0'))));
     setStatus(idleText);
     setFaceDot('gray', idleText);
     return;
@@ -782,7 +782,7 @@ async function startFaceDetection(){
 
 async function runFaceCheck(){
   if(!faceControlEnabled)return;
-  if(['lunch','prayer','paused','not_started','ended'].includes(empState)){
+  if(['lunch','break','prayer','paused','not_started','ended'].includes(empState)){
     scheduleFaceCheck(FACE_MONITOR_INTERVAL);
     return;
   }
