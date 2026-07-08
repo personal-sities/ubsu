@@ -4,8 +4,8 @@ function exportExcel(){
   if(!monthlyData||monthlyData.length===0){toast('warn',t('export_title'),t('export_load_monthly_first'));return;}
   if(typeof XLSX==='undefined'){toast('warn',t('export_title'),t('export_excel_wait'));return;}
   const month=document.getElementById('fmonth').value||curM();
-  const headers=['#',t('mt_date'),t('mt1'),t('mt2'),t('mt_worked'),t('mt_lunch_start'),t('mt_lunch_end'),t('mt_end')];
-  const rows=monthlyData.map((d,i)=>[i+1,d.date,d.name,d.start,d.hours,d.lunchStart,d.lunchEnd,d.end]);
+  const headers=['#',t('mt_date'),t('mt1'),t('mt2'),t('mt_worked'),t('mt_lunch_start'),t('mt_lunch_end'),t('extra_break'),t('mt_end')];
+  const rows=monthlyData.map((d,i)=>[i+1,d.date,d.name,d.start,d.hours,d.lunchStart,d.lunchEnd,d.breakTime||'-',d.end]);
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
   ws['!cols']=headers.map(()=>({wch:18}));
   const wb=XLSX.utils.book_new();
@@ -23,8 +23,8 @@ function exportPDF(){
   doc.text(`AloqaPro — ${t('report_title')}: `+month,14,14);
   doc.setFontSize(10);
   doc.text('Sana: '+new Date().toLocaleDateString(),14,22);
-  const headers=[['#',t('mt_date'),t('mt1'),t('mt2'),t('mt_worked'),t('mt_lunch_start'),t('mt_lunch_end'),t('mt_end')]];
-  const rows=monthlyData.map((d,i)=>[i+1,d.date,d.name,d.start,d.hours,d.lunchStart,d.lunchEnd,d.end]);
+  const headers=[['#',t('mt_date'),t('mt1'),t('mt2'),t('mt_worked'),t('mt_lunch_start'),t('mt_lunch_end'),t('extra_break'),t('mt_end')]];
+  const rows=monthlyData.map((d,i)=>[i+1,d.date,d.name,d.start,d.hours,d.lunchStart,d.lunchEnd,d.breakTime||'-',d.end]);
   doc.autoTable({head:headers,body:rows,startY:28,styles:{fontSize:9,cellPadding:2},headStyles:{fillColor:[11,78,162],textColor:[255,255,255],fontStyle:'bold'},alternateRowStyles:{fillColor:[245,248,252]},margin:{left:14,right:14}});
   doc.save('AloqaPro_'+month+'_attendance.pdf');
   toast('success',t('export_title'),'PDF: '+t('export_downloaded'));
@@ -45,6 +45,8 @@ let currentAfkStart = null;
 let afkWarnShown = false;
 let isAfk = false;
 let breakSeconds = 0;
+let extraBreakStart = null, extraBreakAccum = 0;
+let extraBreakIv = null;
 let prayerAccum = 0;
 let prayerStart = null;
 let pIv = null;
@@ -54,6 +56,14 @@ let platformPauseTimer = null;
 let pendingAutoEndSave = false;
 
 function todayBreakSec(){return breakSeconds;}
+function currentExtraBreakSeconds(){
+  let total=extraBreakAccum||0;
+  if(empState==='break'&&extraBreakStart)total+=Math.max(0,Math.floor((tzNow()-extraBreakStart)/1000));
+  return total;
+}
+function extraBreakOverSeconds(total=currentExtraBreakSeconds()){
+  return Math.max(0,Math.floor(total||0)-BREAK_LIMIT_SEC);
+}
 
 function getLS(){return JSON.parse(localStorage.getItem('aloqa_emp_state')||'null');}
 function normalizeAttendanceTime(v){
@@ -87,7 +97,7 @@ async function upsertAttendance(payload,{showError=false}={}){
 }
 function saveLS(){
   const ss=getLS()||{};
-  const data={date:todayISO(),state:empState,wAccum,lAccum,prayerAccum,afkSeconds,afkCount,breakSeconds,wStartISO:wStart?wStart.toISOString():null,lStartISO:lStart?lStart.toISOString():null,prayerStartISO:prayerStart?prayerStart.toISOString():null,afkStartISO:currentAfkStart?currentAfkStart.toISOString():null,i_s:document.getElementById('i_s')?.textContent||'-',i_e:document.getElementById('i_e')?.textContent||'-',i_ls:document.getElementById('i_ls')?.textContent||'-',i_le:document.getElementById('i_le')?.textContent||'-',i_ps:document.getElementById('i_ps')?.textContent||'-',i_pe:document.getElementById('i_pe')?.textContent||'-',startTime:getAttendanceTime(ss,'startTime','i_s'),endTime:getAttendanceTime(ss,'endTime','i_e'),lunchStartTime:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunchEndTime:getAttendanceTime(ss,'lunchEndTime','i_le'),prayerStartTime:getAttendanceTime(ss,'prayerStartTime','i_ps'),prayerEndTime:getAttendanceTime(ss,'prayerEndTime','i_pe'),lateMin:ss.lateMin||0,autoEndDone:autoEndDone||false,lastSavedISO:tzNow().toISOString()};
+  const data={date:todayISO(),state:empState,wAccum,lAccum,extraBreakAccum,prayerAccum,afkSeconds,afkCount,breakSeconds,wStartISO:wStart?wStart.toISOString():null,lStartISO:lStart?lStart.toISOString():null,extraBreakStartISO:extraBreakStart?extraBreakStart.toISOString():null,prayerStartISO:prayerStart?prayerStart.toISOString():null,afkStartISO:currentAfkStart?currentAfkStart.toISOString():null,i_s:document.getElementById('i_s')?.textContent||'-',i_e:document.getElementById('i_e')?.textContent||'-',i_ls:document.getElementById('i_ls')?.textContent||'-',i_le:document.getElementById('i_le')?.textContent||'-',i_br_s:document.getElementById('i_br_s')?.textContent||'-',i_br_e:document.getElementById('i_br_e')?.textContent||'-',i_ps:document.getElementById('i_ps')?.textContent||'-',i_pe:document.getElementById('i_pe')?.textContent||'-',startTime:getAttendanceTime(ss,'startTime','i_s'),endTime:getAttendanceTime(ss,'endTime','i_e'),lunchStartTime:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunchEndTime:getAttendanceTime(ss,'lunchEndTime','i_le'),extraBreakStartTime:getAttendanceTime(ss,'extraBreakStartTime','i_br_s'),extraBreakEndTime:getAttendanceTime(ss,'extraBreakEndTime','i_br_e'),prayerStartTime:getAttendanceTime(ss,'prayerStartTime','i_ps'),prayerEndTime:getAttendanceTime(ss,'prayerEndTime','i_pe'),lateMin:ss.lateMin||0,autoEndDone:autoEndDone||false,lastSavedISO:tzNow().toISOString()};
   localStorage.setItem('aloqa_emp_state',JSON.stringify(data));
 }
 function getTodayAutoEndDate(){
@@ -98,11 +108,12 @@ function getTodayAutoEndDate(){
 async function restoreLS(){
   const ss=getLS();
   if(!ss||ss.date!==todayISO()){localStorage.removeItem('aloqa_emp_state');updateEmpBtns();return false;}
-  empState=ss.state||'not_started';wAccum=ss.wAccum||0;lAccum=ss.lAccum||0;prayerAccum=ss.prayerAccum||0;afkSeconds=ss.afkSeconds||0;afkCount=ss.afkCount||0;breakSeconds=ss.breakSeconds||0;autoEndDone=ss.autoEndDone||false;
+  empState=ss.state||'not_started';wAccum=ss.wAccum||0;lAccum=ss.lAccum||0;extraBreakAccum=ss.extraBreakAccum||0;prayerAccum=ss.prayerAccum||0;afkSeconds=ss.afkSeconds||0;afkCount=ss.afkCount||0;breakSeconds=ss.breakSeconds||0;autoEndDone=ss.autoEndDone||false;
   if(ss.wStartISO)wStart=new Date(ss.wStartISO);
   if(ss.lStartISO)lStart=new Date(ss.lStartISO);
+  if(ss.extraBreakStartISO)extraBreakStart=new Date(ss.extraBreakStartISO);
   if(ss.prayerStartISO)prayerStart=new Date(ss.prayerStartISO);
-  if(!autoEndDone&&['working','lunch','paused','prayer'].includes(empState)){
+  if(!autoEndDone&&['working','lunch','break','paused','prayer'].includes(empState)){
     const autoEndAt=getTodayAutoEndDate();
     if(tzNow()>=autoEndAt){
       let canAutoFinish=false;
@@ -114,12 +125,15 @@ async function restoreLS(){
       if(canAutoFinish){
         if(empState==='working'&&wStart)wAccum+=Math.max(0,Math.floor((autoEndAt-wStart)/1000));
         if(empState==='lunch'&&lStart)lAccum+=Math.max(0,Math.floor((autoEndAt-lStart)/1000));
+        if(empState==='break'&&extraBreakStart)extraBreakAccum+=Math.max(0,Math.floor((autoEndAt-extraBreakStart)/1000));
         if(empState==='prayer'&&prayerStart)prayerAccum+=Math.max(0,Math.floor((autoEndAt-prayerStart)/1000));
-        wStart=null;lStart=null;prayerStart=null;empState='ended';autoEndDone=true;
-        ss.state='ended';ss.wAccum=wAccum;ss.lAccum=lAccum;ss.prayerAccum=prayerAccum;
-        ss.wStartISO=null;ss.lStartISO=null;ss.prayerStartISO=null;ss.afkStartISO=null;
+        wStart=null;lStart=null;extraBreakStart=null;prayerStart=null;empState='ended';autoEndDone=true;
+        ss.state='ended';ss.wAccum=wAccum;ss.lAccum=lAccum;ss.extraBreakAccum=extraBreakAccum;ss.prayerAccum=prayerAccum;
+        ss.wStartISO=null;ss.lStartISO=null;ss.extraBreakStartISO=null;ss.prayerStartISO=null;ss.afkStartISO=null;
         ss.i_e=ss.i_e&&ss.i_e!=='-'?ss.i_e:fmtHM(autoEndAt);
         ss.endTime=ss.endTime||fmtHMS(autoEndAt);
+        ss.i_br_e=ss.i_br_e&&ss.i_br_e!=='-'?ss.i_br_e:(ss.i_br_s&&ss.i_br_s!=='-'?fmtHM(autoEndAt):ss.i_br_e);
+        ss.extraBreakEndTime=ss.extraBreakEndTime||(ss.i_br_s&&ss.i_br_s!=='-'?fmtHMS(autoEndAt):null);
         ss.autoEndDone=true;ss.lastSavedISO=tzNow().toISOString();
         localStorage.setItem('aloqa_emp_state',JSON.stringify(ss));
         pendingAutoEndSave=true;
@@ -127,12 +141,13 @@ async function restoreLS(){
     }
   }
   if(ss.afkStartISO&&empState==='working'){currentAfkStart=new Date(ss.afkStartISO);isAfk=true;const elapsed=Math.floor((tzNow()-currentAfkStart)/1000);if(elapsed>0){afkSeconds+=elapsed;breakSeconds+=elapsed;}currentAfkStart=null;isAfk=false;}
-  st('i_s',ss.i_s||'-');st('i_e',ss.i_e||'-');st('i_ls',ss.i_ls||'-');st('i_le',ss.i_le||'-');st('i_ps',ss.i_ps||'-');st('i_pe',ss.i_pe||'-');
+  st('i_s',ss.i_s||'-');st('i_e',ss.i_e||'-');st('i_ls',ss.i_ls||'-');st('i_le',ss.i_le||'-');st('i_br_s',ss.i_br_s||'-');st('i_br_e',ss.i_br_e||'-');st('i_ps',ss.i_ps||'-');st('i_pe',ss.i_pe||'-');
   const lt=document.getElementById('e_ltag');if(lt&&ss.lateMin!==undefined)lt.textContent=t('lt_pre')+' '+ss.lateMin+' '+t('lt_u');
   const displayWork=empState==='working'&&wStart?wAccum+Math.max(0,Math.floor((tzNow()-wStart)/1000)):wAccum;
-  setTV(displayWork,'tw');setTV(lAccum,'tl');setTV(prayerAccum,'tp');updateAfkDisplay();updateBreakBar();updatePrayerInfo();updateEmpBtns();updateEmpStatusTag();
+  setTV(displayWork,'tw');setTV(lAccum,'tl');setTV(currentExtraBreakSeconds(),'tbr');setTV(prayerAccum,'tp');updateAfkDisplay();updateBreakBar();updatePrayerInfo();updateEmpBtns();updateEmpStatusTag();
   if(empState==='working')startWT();
   if(empState==='lunch')startLT();
+  if(empState==='break')startBT();
   if(empState==='prayer')startPT();
   return true;
 }
@@ -196,6 +211,34 @@ async function empBackLunch(){
   rememberAttendanceTime('i_le','lunchEndTime',now);empState='working';wStart=now;stopLT();resumeFaceMonitoringAfterBreak();updateEmpBtns();updateEmpStatusTag();startWT();saveLS();
   if(!(await savePartial(true)))return;
   toast('success',t('lunch_title'),`${t('work_continues')} 💼`);
+}
+async function empExtraBreak(){
+  if(empState==='break'){await empBackExtraBreak();return;}
+  if(empState!=='working')return;
+  extraBreakStart=tzNow();
+  if(wStart)wAccum+=Math.floor((extraBreakStart-wStart)/1000);
+  wStart=null;
+  empState='break';
+  rememberAttendanceTime('i_br_s','extraBreakStartTime',extraBreakStart);
+  stopWT();
+  pauseFaceMonitoringForBreak();
+  updateEmpBtns();updateEmpStatusTag();startBT();saveLS();
+  if(!(await savePartial(true)))return;
+  toast('info',t('break_btn'),t('break_started_success'));
+}
+async function empBackExtraBreak(){
+  if(empState!=='break')return;
+  const now=tzNow();
+  if(extraBreakStart)extraBreakAccum+=Math.floor((now-extraBreakStart)/1000);
+  extraBreakStart=null;
+  rememberAttendanceTime('i_br_e','extraBreakEndTime',now);
+  empState='working';
+  wStart=now;
+  stopBT();
+  resumeFaceMonitoringAfterBreak();
+  updateEmpBtns();updateEmpStatusTag();startWT();saveLS();updateBreakBar();
+  if(!(await savePartial(true)))return;
+  toast('success',t('break_btn'),t('break_ended_success'));
 }
 async function empPrayer(){
   if(empState==='prayer'){await empBackPrayer();return;}
@@ -266,7 +309,7 @@ function syncWorkWhileAway({saveRemote=false}={}){
   if(saveRemote&&empState!=='ended')savePartial().catch(e=>console.warn('platform sync save:',e.message||e));
 }
 async function empEnd(auto=false){
-  if(!['working','lunch','paused','prayer'].includes(empState))return;
+  if(!['working','lunch','break','paused','prayer'].includes(empState))return;
   try{
     const canFinish=await canFinishWorkByAmoCrmTasks({auto});
     if(!canFinish)return;
@@ -278,10 +321,14 @@ async function empEnd(auto=false){
   const now=tzNow();
   if(empState==='working'&&wStart)wAccum+=Math.floor((now-wStart)/1000);
   if(empState==='lunch'&&lStart)lAccum+=Math.floor((now-lStart)/1000);
+  if(empState==='break'&&extraBreakStart){
+    extraBreakAccum+=Math.floor((now-extraBreakStart)/1000);
+    rememberAttendanceTime('i_br_e','extraBreakEndTime',now);
+  }
   if(empState==='prayer'&&prayerStart)prayerAccum+=Math.floor((now-prayerStart)/1000);
-  wStart=null;lStart=null;prayerStart=null;empState='ended';rememberAttendanceTime('i_e','endTime',now);
-  stopWT();stopLT();stopPT();document.getElementById('bc').classList.add('hidden');
-  setTV(wAccum,'tw');setTV(lAccum,'tl');setTV(prayerAccum,'tp');updateEmpBtns();updateEmpStatusTag();stopFaceDetection();
+  wStart=null;lStart=null;extraBreakStart=null;prayerStart=null;empState='ended';rememberAttendanceTime('i_e','endTime',now);
+  stopWT();stopLT();stopBT();stopPT();document.getElementById('bc').classList.add('hidden');
+  setTV(wAccum,'tw');setTV(lAccum,'tl');setTV(extraBreakAccum,'tbr');setTV(prayerAccum,'tp');updateBreakBar();updateEmpBtns();updateEmpStatusTag();stopFaceDetection();
   if(auto)autoEndDone=true;
   saveLS();
   if(!(await saveAtt(auto,true)))return;
@@ -295,7 +342,8 @@ async function saveAtt(autoEnded=false,showError=false){
   const endTime=getAttendanceTime(ss,'endTime','i_e');
   const startHM=startTime?startTime.substring(0,5):null;
   const endHM=endTime?endTime.substring(0,5):null;
-  const payload={employee_id:CU.id,work_date:today,start_time:startTime,end_time:endTime,lunch_start:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunch_end:getAttendanceTime(ss,'lunchEndTime','i_le'),work_seconds:wAccum,lunch_seconds:lAccum,afk_seconds:getPenaltyAfkSeconds(afkSeconds),afk_count:afkCount,late_minutes:lm,status:computeStatusByTimes(startHM,endHM,lm,wAccum),auto_ended:autoEnded};
+  const breakTotal=extraBreakAccum||0;
+  const payload={employee_id:CU.id,work_date:today,start_time:startTime,end_time:endTime,lunch_start:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunch_end:getAttendanceTime(ss,'lunchEndTime','i_le'),extra_break_start:getAttendanceTime(ss,'extraBreakStartTime','i_br_s'),extra_break_end:getAttendanceTime(ss,'extraBreakEndTime','i_br_e'),work_seconds:wAccum,lunch_seconds:lAccum,extra_break_seconds:breakTotal,extra_break_over_seconds:extraBreakOverSeconds(breakTotal),afk_seconds:getPenaltyAfkSeconds(afkSeconds),afk_count:afkCount,late_minutes:lm,status:computeStatusByTimes(startHM,endHM,lm,wAccum),auto_ended:autoEnded};
   if(!(await upsertAttendance(payload,{showError})))return false;
   loadHist();
   return true;
@@ -305,12 +353,13 @@ async function savePartial(showError=false){
   const today=todayISO();const ss=getLS()||{};const lm=ss.lateMin||0;
   let cw=wAccum;if(empState==='working'&&wStart)cw+=Math.floor((tzNow()-wStart)/1000);
   let cl=lAccum;if(empState==='lunch'&&lStart)cl+=Math.floor((tzNow()-lStart)/1000);
+  let cb=extraBreakAccum;if(empState==='break'&&extraBreakStart)cb+=Math.floor((tzNow()-extraBreakStart)/1000);
   let afkNow=afkSeconds;
   const startTime=getAttendanceTime(ss,'startTime','i_s');
   const endTime=getAttendanceTime(ss,'endTime','i_e');
   const startHM=startTime?startTime.substring(0,5):null;
   const endHM=endTime?endTime.substring(0,5):null;
-  const payload={employee_id:CU.id,work_date:today,start_time:startTime,end_time:endTime,lunch_start:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunch_end:getAttendanceTime(ss,'lunchEndTime','i_le'),work_seconds:cw,lunch_seconds:cl,afk_seconds:getPenaltyAfkSeconds(afkNow),afk_count:afkCount,late_minutes:lm,status:computeStatusByTimes(startHM,endHM,lm,cw),auto_ended:false};
+  const payload={employee_id:CU.id,work_date:today,start_time:startTime,end_time:endTime,lunch_start:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunch_end:getAttendanceTime(ss,'lunchEndTime','i_le'),extra_break_start:getAttendanceTime(ss,'extraBreakStartTime','i_br_s'),extra_break_end:getAttendanceTime(ss,'extraBreakEndTime','i_br_e'),work_seconds:cw,lunch_seconds:cl,extra_break_seconds:cb,extra_break_over_seconds:extraBreakOverSeconds(cb),afk_seconds:getPenaltyAfkSeconds(afkNow),afk_count:afkCount,late_minutes:lm,status:computeStatusByTimes(startHM,endHM,lm,cw),auto_ended:false};
   return upsertAttendance(payload,{showError});
 }
 
