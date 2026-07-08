@@ -139,6 +139,25 @@ Object.assign(TR.uz,{
   returned:'Qaytgan',
   no_employees_on_work_leave:'Ish ta\'tilidagi xodimlar yo\'q'
 });
+Object.assign(TR.uz,{
+  break_btn:'Tanaffus',
+  break_back:'Tanaffusdan qaytish',
+  break_state:'Tanaffusda',
+  break_started_success:'Tanaffus boshlandi',
+  break_ended_success:'Tanaffus tugadi, ish davom etmoqda',
+  extra_break:'Tanaffus',
+  extra_break_total:'Tanaffus jami',
+  extra_break_over:'Limitdan oshgan',
+  extra_break_none:'Tanaffus yo\'q',
+  monthly_employee_all:'Barcha hodimlar',
+  monthly_employee_one:'Bitta hodim hisoboti',
+  monthly_detail_daily:'Kunlik tafsilot',
+  detail_start:'Boshlagan',
+  detail_end:'Tugagan',
+  detail_work:'Ish vaqti',
+  detail_lunch:'Tushlik',
+  mas_break_time:'Tanaffus'
+});
 Object.assign(TR.ru,{
   sc_leave:'Отпуск',
   sc_leave_btn:'Сотрудники в отпуске',
@@ -181,7 +200,43 @@ Object.assign(TR.ru,{
   returned:'Вернулся',
   no_employees_on_work_leave:'Нет сотрудников в отпуске'
 });
+Object.assign(TR.ru,{
+  break_btn:'Перерыв',
+  break_back:'Вернуться с перерыва',
+  break_state:'На перерыве',
+  break_started_success:'Перерыв начался',
+  break_ended_success:'Перерыв завершён, работа продолжается',
+  extra_break:'Перерыв',
+  extra_break_total:'Перерыв всего',
+  extra_break_over:'Сверх лимита',
+  extra_break_none:'Перерыва нет',
+  monthly_employee_all:'Все сотрудники',
+  monthly_employee_one:'Отчет одного сотрудника',
+  monthly_detail_daily:'Детали по дням',
+  detail_start:'Начало',
+  detail_end:'Конец',
+  detail_work:'Рабочее время',
+  detail_lunch:'Обед',
+  mas_break_time:'Перерыв'
+});
 TR.en = {
+  break_btn:'Break',
+  break_back:'Back from break',
+  break_state:'On break',
+  break_started_success:'Break started',
+  break_ended_success:'Break ended, work continues',
+  extra_break:'Break',
+  extra_break_total:'Total break',
+  extra_break_over:'Over limit',
+  extra_break_none:'No break',
+  monthly_employee_all:'All employees',
+  monthly_employee_one:'Single employee report',
+  monthly_detail_daily:'Daily details',
+  detail_start:'Start',
+  detail_end:'End',
+  detail_work:'Work time',
+  detail_lunch:'Lunch',
+  mas_break_time:'Break',
   sc_leave:'Work leave',
   sc_leave_btn:'Employees on work leave',
   monthly_att_summary_title:'Monthly attendance details',
@@ -1113,6 +1168,15 @@ function applyLang(){
    'eh_note','el_lbl','afk_month_lbl','e_cm','mw_txt','mw_ok','mep_t','mep_s','mep_c',
    'afk_lbl','afk_warn_title','afk_warn_txt','afk_warn_sub','afk_im_here','auto_end_txt','dash_attendance_label'
   ].forEach(k=>st(k,t(k)));
+  st('th_break',t('extra_break'));
+  st('mt_break',t('extra_break'));
+  st('ht_break',t('extra_break'));
+  st('ms_break',t('extra_break'));
+  st('ebrl',t('extra_break'));
+  st('ei_break_start',t('extra_break')+' '+t('detail_start').toLowerCase());
+  st('ei_break_end',t('extra_break')+' '+t('detail_end').toLowerCase());
+  const monthlyEmpFilter=document.getElementById('monthly_employee_filter');
+  if(monthlyEmpFilter?.options?.length)monthlyEmpFilter.options[0].textContent=t('monthly_employee_all');
   st('dash_work_sub', t('dash_last7_sub'));
   st('afkBannerTxt', t('afk_banner'));
   st('work_leave_title', t('employees_on_work_leave'));
@@ -1130,6 +1194,7 @@ function applyLang(){
   sp('ep_np',t('ep_ph'));sp('fsearch',t('fsearch'));
   const bsE=document.getElementById('bs');if(bsE)bsE.textContent=t('bs');
   const blE=document.getElementById('bl');if(blE)blE.textContent=(empState==='lunch'?t('bb'):t('bl'));
+  const bbrE=document.getElementById('bbr');if(bbrE)bbrE.textContent=(empState==='break'?t('break_back'):t('break_btn'));
   const beE=document.getElementById('be');if(beE)beE.textContent=t('be');
   const bpE=document.getElementById('bp');if(bpE)bpE.textContent=(empState==='prayer'?t('prayer_back'):t('prayer_btn'));
   const bcE=document.getElementById('bc');if(bcE)bcE.textContent=t('bc');
