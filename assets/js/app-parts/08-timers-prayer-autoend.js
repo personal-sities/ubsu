@@ -4,7 +4,7 @@ function startWT(){
   stopWT();let cnt=0;
   wIv=setInterval(()=>{
     let tot=wAccum;if(wStart)tot+=Math.floor((tzNow()-wStart)/1000);setTV(tot,'tw');
-    cnt++;if(cnt%30===0){saveLS();savePartial();}
+    cnt++;if(cnt%30===0){saveLS();savePartial().catch(e=>console.warn('attendance autosave:',e.message||e));}
   },1000);
 }
 function stopWT(){if(wIv){clearInterval(wIv);wIv=null;}}
@@ -203,4 +203,3 @@ function startAutoEndCheck(){
   },30000);
   if(!autoEndDone&&['working','lunch','paused'].includes(empState)&&getTzTotalMinutes()>=((AUTO_END_HOUR*60)+AUTO_END_MIN))empEnd(true);
 }
-
