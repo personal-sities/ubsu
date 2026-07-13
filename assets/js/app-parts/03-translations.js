@@ -859,6 +859,18 @@ Object.assign(TR.en,{
   employee_deleting_wait:'Please wait, employee is being deleted...',
   password_updating_wait:'Please wait, password is being changed...'
 });
+Object.assign(TR.uz,{
+  lunch_already_completed:'Bugungi tushlik vaqti allaqachon ishlatilgan',
+  lunch_completed_btn:'Tushlik tugagan'
+});
+Object.assign(TR.ru,{
+  lunch_already_completed:'Сегодняшний обед уже завершён',
+  lunch_completed_btn:'Обед завершён'
+});
+Object.assign(TR.en,{
+  lunch_already_completed:'Today\'s lunch has already been completed',
+  lunch_completed_btn:'Lunch completed'
+});
 let lang = localStorage.getItem('aloqa_lang') || 'uz';
 const t = k => ((TR[lang] && TR[lang][k]) ?? TR.uz[k] ?? k);
 const tf = (key, params={}) => Object.entries(params).reduce((acc,[name,value]) => acc.replaceAll(`{${name}}`, value), t(key));
