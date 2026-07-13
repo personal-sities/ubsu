@@ -3,13 +3,15 @@
 function updateEmpBtns(){
   const bsE=document.getElementById('bs'),blE=document.getElementById('bl'),bbE=document.getElementById('bbr'),bpE=document.getElementById('bp'),beE=document.getElementById('be'),bcE=document.getElementById('bc');
   const dis=(b,d)=>{if(b)b.disabled=d;};
+  const lunchUsed=empState==='working'&&typeof hasLunchStartedToday==='function'&&hasLunchStartedToday();
   if(bcE)bcE.classList.toggle('hidden',empState!=='paused');
   if(empState==='not_started'){dis(bsE,false);dis(blE,true);dis(bbE,true);dis(bpE,true);dis(beE,true);if(blE){blE.textContent=t('bl');blE.onclick=empLunch;} if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
-  else if(empState==='working'){dis(bsE,true);dis(blE,false);dis(bbE,false);dis(bpE,false);dis(beE,false);if(blE){blE.textContent=t('bl');blE.onclick=empLunch;} if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
+  else if(empState==='working'){dis(bsE,true);dis(blE,lunchUsed);dis(bbE,false);dis(bpE,false);dis(beE,false);if(blE){blE.textContent=lunchUsed?t('lunch_completed_btn'):t('bl');blE.onclick=empLunch;} if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
   else if(empState==='lunch'){dis(bsE,true);dis(blE,false);dis(bbE,true);dis(bpE,true);dis(beE,true);if(blE){blE.textContent=t('bb');blE.onclick=empBackLunch;} if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
   else if(empState==='break'){dis(bsE,true);dis(blE,true);dis(bbE,false);dis(bpE,true);dis(beE,true);if(bbE){bbE.textContent=t('break_back');bbE.onclick=empBackExtraBreak;} if(blE){blE.textContent=t('bl');blE.onclick=empLunch;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
   else if(empState==='prayer'){dis(bsE,true);dis(blE,true);dis(bbE,true);dis(bpE,false);dis(beE,true);if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_back');bpE.onclick=empBackPrayer;}}
   else if(empState==='paused'||empState==='ended'){dis(bsE,true);dis(blE,true);dis(bbE,true);dis(bpE,true);dis(beE,true);}
+  if(typeof lunchActionLocked!=='undefined'&&lunchActionLocked)dis(blE,true);
 }
 function updateEmpStatusTag(){
   const map={not_started:t('st0'),working:t('st1'),lunch:t('st2'),break:t('break_state'),prayer:t('prayer_btn'),paused:t('paused'),ended:t('st4')};
@@ -55,7 +57,7 @@ async function loadHist(){
     else bdg=`<span class="badge br">${t('b_abs')}</span>`;
     if(r.auto_ended)bdg+=` <span class="badge bauto" style="font-size:10px">⚙️ ${t('auto_label')}</span>`;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${i+1}</td><td style="font-family:var(--mono)">${r.work_date}</td><td style="font-family:var(--mono)">${r.start_time?r.start_time.substring(0,5):'-'}</td><td>${r.lunch_start?r.lunch_start.substring(0,5):'-'}</td><td>${r.lunch_end?r.lunch_end.substring(0,5):'-'}</td><td>${r.end_time?r.end_time.substring(0,5):'-'}</td><td>${r.late_minutes?r.late_minutes+' '+t('daq'):'-'}</td><td style="font-family:var(--mono)">${wh} ${t('soat')} ${wm} ${t('daqiqa')}</td><td>${lh} ${t('soat')} ${lm2} ${t('daqiqa')}</td><td style="color:${afkMin>0?'var(--danger)':'inherit'};font-family:var(--mono)">${afkMin>0?afkMin+' '+t('daq'):'—'}</td><td>${bdg}</td>`;
+    tr.innerHTML=`<td>${i+1}</td><td style="font-family:var(--mono)">${r.work_date}</td><td style="font-family:var(--mono)">${r.start_time?r.start_time.substring(0,5):'-'}</td><td>${r.lunch_start?r.lunch_start.substring(0,8):'-'}</td><td>${r.lunch_end?r.lunch_end.substring(0,8):'-'}</td><td>${r.end_time?r.end_time.substring(0,5):'-'}</td><td>${r.late_minutes?r.late_minutes+' '+t('daq'):'-'}</td><td style="font-family:var(--mono)">${wh} ${t('soat')} ${wm} ${t('daqiqa')}</td><td>${lh} ${t('soat')} ${lm2} ${t('daqiqa')}</td><td style="color:${afkMin>0?'var(--danger)':'inherit'};font-family:var(--mono)">${afkMin>0?afkMin+' '+t('daq'):'—'}</td><td>${bdg}</td>`;
     const breakCell=tr.insertCell(9);
     breakCell.textContent=`${bh} ${t('soat')} ${bm2} ${t('daqiqa')}`;
     tbody.appendChild(tr);
