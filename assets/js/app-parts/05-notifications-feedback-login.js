@@ -12,7 +12,8 @@ let faceControlPollTimer = null;
 let todayLunchShift = null;
 
 function lunchPlanLocalKey(){
-  return `aloqa_lunch_plan_${todayISO()}`;
+  const employeeId=CU?.id||'anonymous';
+  return `aloqa_lunch_plan_${employeeId}_${todayISO()}`;
 }
 function loadLunchPlanLocal(){
   try{return JSON.parse(localStorage.getItem(lunchPlanLocalKey())||'null');}catch(e){return null;}
