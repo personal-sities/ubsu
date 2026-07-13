@@ -54,6 +54,13 @@ let autoEndIv = null;
 let autoEndDone = false;
 let platformPauseTimer = null;
 let pendingAutoEndSave = false;
+let lunchActionLocked = false;
+let lunchActionUnlockTimer = null;
+let attendanceSaveQueue = Promise.resolve();
+
+const LEGACY_EMP_STATE_KEY = 'aloqa_emp_state';
+const EMP_STATE_KEY_PREFIX = `${LEGACY_EMP_STATE_KEY}:`;
+const LUNCH_ACTION_COOLDOWN_MS = 1200;
 
 function todayBreakSec(){return breakSeconds;}
 function currentExtraBreakSeconds(){
@@ -65,7 +72,24 @@ function extraBreakOverSeconds(total=currentExtraBreakSeconds()){
   return Math.max(0,Math.floor(total||0)-BREAK_LIMIT_SEC);
 }
 
-function getLS(){return JSON.parse(localStorage.getItem('aloqa_emp_state')||'null');}
+function readLocalState(key){
+  if(!key)return null;
+  try{return JSON.parse(localStorage.getItem(key)||'null');}
+  catch(e){console.warn('employee state parse:',e.message||e);localStorage.removeItem(key);return null;}
+}
+function getEmployeeStateKey(employeeId=CU?.id){
+  return employeeId ? `${EMP_STATE_KEY_PREFIX}${employeeId}` : null;
+}
+function getLS(){return readLocalState(getEmployeeStateKey());}
+function setLS(data){
+  const key=getEmployeeStateKey();
+  if(!key||!data)return;
+  localStorage.setItem(key,JSON.stringify({...data,employeeId:CU.id}));
+}
+function removeLS(){
+  const key=getEmployeeStateKey();
+  if(key)localStorage.removeItem(key);
+}
 function normalizeAttendanceTime(v){
   if(!v||v==='-')return null;
   const parts=String(v).split(':');
@@ -84,30 +108,130 @@ function rememberAttendanceTime(displayKey, exactKey, date){
   const ss=getLS()||{};
   ss[displayKey]=display;
   ss[exactKey]=fmtHMS(date);
-  localStorage.setItem('aloqa_emp_state',JSON.stringify(ss));
+  setLS(ss);
 }
 async function upsertAttendance(payload,{showError=false}={}){
-  const {error}=await sb.from('attendance').upsert(payload,{onConflict:'employee_id,work_date'});
-  if(error){
-    console.warn('attendance save:', error.message || error);
-    if(showError)toast('error',t('error_title'),error.message||t('attendance_load_error'));
-    return false;
-  }
-  return true;
+  const saveOperation=attendanceSaveQueue.catch(()=>{}).then(async()=>{
+    const {error}=await sb.from('attendance').upsert(payload,{onConflict:'employee_id,work_date'});
+    if(error){
+      console.warn('attendance save:', error.message || error);
+      if(showError)toast('error',t('error_title'),error.message||t('attendance_load_error'));
+      return false;
+    }
+    return true;
+  });
+  attendanceSaveQueue=saveOperation.then(()=>undefined,()=>undefined);
+  return saveOperation;
 }
 function saveLS(){
   const ss=getLS()||{};
   const data={date:todayISO(),state:empState,wAccum,lAccum,extraBreakAccum,prayerAccum,afkSeconds,afkCount,breakSeconds,wStartISO:wStart?wStart.toISOString():null,lStartISO:lStart?lStart.toISOString():null,extraBreakStartISO:extraBreakStart?extraBreakStart.toISOString():null,prayerStartISO:prayerStart?prayerStart.toISOString():null,afkStartISO:currentAfkStart?currentAfkStart.toISOString():null,i_s:document.getElementById('i_s')?.textContent||'-',i_e:document.getElementById('i_e')?.textContent||'-',i_ls:document.getElementById('i_ls')?.textContent||'-',i_le:document.getElementById('i_le')?.textContent||'-',i_br_s:document.getElementById('i_br_s')?.textContent||'-',i_br_e:document.getElementById('i_br_e')?.textContent||'-',i_ps:document.getElementById('i_ps')?.textContent||'-',i_pe:document.getElementById('i_pe')?.textContent||'-',startTime:getAttendanceTime(ss,'startTime','i_s'),endTime:getAttendanceTime(ss,'endTime','i_e'),lunchStartTime:getAttendanceTime(ss,'lunchStartTime','i_ls'),lunchEndTime:getAttendanceTime(ss,'lunchEndTime','i_le'),extraBreakStartTime:getAttendanceTime(ss,'extraBreakStartTime','i_br_s'),extraBreakEndTime:getAttendanceTime(ss,'extraBreakEndTime','i_br_e'),prayerStartTime:getAttendanceTime(ss,'prayerStartTime','i_ps'),prayerEndTime:getAttendanceTime(ss,'prayerEndTime','i_pe'),lateMin:ss.lateMin||0,autoEndDone:autoEndDone||false,lastSavedISO:tzNow().toISOString()};
-  localStorage.setItem('aloqa_emp_state',JSON.stringify(data));
+  setLS(data);
 }
 function getTodayAutoEndDate(){
   const hh=String(AUTO_END_HOUR).padStart(2,'0');
   const mm=String(AUTO_END_MIN).padStart(2,'0');
   return new Date(`${todayISO()}T${hh}:${mm}:00+05:00`);
 }
+function resetEmployeeRuntimeState(){
+  if(typeof stopAll==='function')stopAll();
+  if(lunchActionUnlockTimer){clearTimeout(lunchActionUnlockTimer);lunchActionUnlockTimer=null;}
+  empState='not_started';
+  wStart=null;wAccum=0;lStart=null;lAccum=0;
+  extraBreakStart=null;extraBreakAccum=0;
+  prayerStart=null;prayerAccum=0;
+  currentAfkStart=null;afkSeconds=0;afkCount=0;afkCurSec=0;
+  isAfk=false;breakSeconds=0;autoEndDone=false;pendingAutoEndSave=false;
+  lunchActionLocked=false;
+  ['i_s','i_e','i_ls','i_le','i_br_s','i_br_e','i_ps','i_pe'].forEach(id=>st(id,'-'));
+  ['tw','tl','tbr','tp'].forEach(id=>setTV(0,id));
+  const lateTag=document.getElementById('e_ltag');
+  if(lateTag)lateTag.textContent=t('lt_pre')+' 0 '+t('lt_u');
+  updateAfkDisplay();updateBreakBar();updateEmpStatusTag();
+}
+function attendanceTimeToDate(value,date=todayISO()){
+  const time=normalizeAttendanceTime(value);
+  if(!time)return null;
+  const parsed=new Date(`${date}T${time}+05:00`);
+  return Number.isNaN(parsed.getTime())?null:parsed;
+}
+function attendanceDisplayTime(value){
+  const time=normalizeAttendanceTime(value);
+  return time?time.substring(0,5):'-';
+}
+function latestAttendanceDate(values,date=todayISO()){
+  return (values||[]).map(value=>attendanceTimeToDate(value,date)).filter(Boolean).sort((a,b)=>b-a)[0]||null;
+}
+function attendanceCheckpointDate(row,fallbackValues=[]){
+  const updated=row?.updated_at?new Date(row.updated_at):null;
+  const now=tzNow();
+  if(updated&&!Number.isNaN(updated.getTime())&&updated<=now)return updated;
+  return latestAttendanceDate(fallbackValues,row?.work_date||todayISO())||now;
+}
+async function loadTodayAttendanceRecord(){
+  if(!CU?.id)return null;
+  const {data,error}=await sb.from('attendance').select('*').eq('employee_id',CU.id).eq('work_date',todayISO()).maybeSingle();
+  if(error){console.warn('attendance restore:',error.message||error);return null;}
+  return data||null;
+}
+function legacyStateBelongsToCurrentEmployee(legacy,remote){
+  if(!legacy||legacy.date!==todayISO())return false;
+  if(legacy.employeeId)return legacy.employeeId===CU?.id;
+  if(!remote)return false;
+  const localStart=getAttendanceTime(legacy,'startTime','i_s');
+  const remoteStart=normalizeAttendanceTime(remote.start_time);
+  return !!localStart&&localStart===remoteStart;
+}
+function stateFromAttendanceRecord(row){
+  if(!row?.start_time)return null;
+  let state='working';
+  if(row.end_time)state='ended';
+  else if(row.extra_break_start&&!row.extra_break_end)state='break';
+  else if(row.lunch_start&&!row.lunch_end)state='lunch';
+
+  const checkpoint=attendanceCheckpointDate(row,[row.lunch_end,row.extra_break_end,row.start_time]);
+  const workStart=state==='working'?checkpoint:null;
+  const lunchStart=state==='lunch'?attendanceCheckpointDate(row,[row.lunch_start]):null;
+  const breakStart=state==='break'?attendanceCheckpointDate(row,[row.extra_break_start]):null;
+
+  return {
+    date:row.work_date||todayISO(),state,
+    wAccum:Number(row.work_seconds)||0,lAccum:Number(row.lunch_seconds)||0,
+    extraBreakAccum:Number(row.extra_break_seconds)||0,prayerAccum:0,
+    afkSeconds:Number(row.afk_seconds)||0,afkCount:Number(row.afk_count)||0,breakSeconds:0,
+    wStartISO:workStart?workStart.toISOString():null,
+    lStartISO:lunchStart?lunchStart.toISOString():null,
+    extraBreakStartISO:breakStart?breakStart.toISOString():null,
+    prayerStartISO:null,afkStartISO:null,
+    i_s:attendanceDisplayTime(row.start_time),i_e:attendanceDisplayTime(row.end_time),
+    i_ls:attendanceDisplayTime(row.lunch_start),i_le:attendanceDisplayTime(row.lunch_end),
+    i_br_s:attendanceDisplayTime(row.extra_break_start),i_br_e:attendanceDisplayTime(row.extra_break_end),
+    i_ps:'-',i_pe:'-',
+    startTime:normalizeAttendanceTime(row.start_time),endTime:normalizeAttendanceTime(row.end_time),
+    lunchStartTime:normalizeAttendanceTime(row.lunch_start),lunchEndTime:normalizeAttendanceTime(row.lunch_end),
+    extraBreakStartTime:normalizeAttendanceTime(row.extra_break_start),extraBreakEndTime:normalizeAttendanceTime(row.extra_break_end),
+    prayerStartTime:null,prayerEndTime:null,
+    lateMin:Number(row.late_minutes)||0,autoEndDone:!!row.auto_ended,
+    lastSavedISO:checkpoint.toISOString()
+  };
+}
 async function restoreLS(){
-  const ss=getLS();
-  if(!ss||ss.date!==todayISO()){localStorage.removeItem('aloqa_emp_state');updateEmpBtns();return false;}
+  resetEmployeeRuntimeState();
+  let ss=getLS();
+  if(ss&&(ss.employeeId!==CU?.id||ss.date!==todayISO())){removeLS();ss=null;}
+  if(!ss){
+    const remote=await loadTodayAttendanceRecord();
+    const legacy=readLocalState(LEGACY_EMP_STATE_KEY);
+    if(legacyStateBelongsToCurrentEmployee(legacy,remote)){
+      ss={...legacy,employeeId:CU.id};
+      setLS(ss);
+    }else if(remote){
+      ss=stateFromAttendanceRecord(remote);
+      if(ss)setLS(ss);
+    }
+    if(legacy)localStorage.removeItem(LEGACY_EMP_STATE_KEY);
+  }
+  if(!ss){updateEmpBtns();return false;}
   empState=ss.state||'not_started';wAccum=ss.wAccum||0;lAccum=ss.lAccum||0;extraBreakAccum=ss.extraBreakAccum||0;prayerAccum=ss.prayerAccum||0;afkSeconds=ss.afkSeconds||0;afkCount=ss.afkCount||0;breakSeconds=ss.breakSeconds||0;autoEndDone=ss.autoEndDone||false;
   if(ss.wStartISO)wStart=new Date(ss.wStartISO);
   if(ss.lStartISO)lStart=new Date(ss.lStartISO);
@@ -124,7 +248,11 @@ async function restoreLS(){
       }
       if(canAutoFinish){
         if(empState==='working'&&wStart)wAccum+=Math.max(0,Math.floor((autoEndAt-wStart)/1000));
-        if(empState==='lunch'&&lStart)lAccum+=Math.max(0,Math.floor((autoEndAt-lStart)/1000));
+        if(empState==='lunch'){
+          if(lStart)lAccum+=Math.max(0,Math.floor((autoEndAt-lStart)/1000));
+          ss.i_le=fmtHM(autoEndAt);
+          ss.lunchEndTime=fmtHMS(autoEndAt);
+        }
         if(empState==='break'&&extraBreakStart)extraBreakAccum+=Math.max(0,Math.floor((autoEndAt-extraBreakStart)/1000));
         if(empState==='prayer'&&prayerStart)prayerAccum+=Math.max(0,Math.floor((autoEndAt-prayerStart)/1000));
         wStart=null;lStart=null;extraBreakStart=null;prayerStart=null;empState='ended';autoEndDone=true;
@@ -135,7 +263,7 @@ async function restoreLS(){
         ss.i_br_e=ss.i_br_e&&ss.i_br_e!=='-'?ss.i_br_e:(ss.i_br_s&&ss.i_br_s!=='-'?fmtHM(autoEndAt):ss.i_br_e);
         ss.extraBreakEndTime=ss.extraBreakEndTime||(ss.i_br_s&&ss.i_br_s!=='-'?fmtHMS(autoEndAt):null);
         ss.autoEndDone=true;ss.lastSavedISO=tzNow().toISOString();
-        localStorage.setItem('aloqa_emp_state',JSON.stringify(ss));
+        setLS(ss);
         pendingAutoEndSave=true;
       }
     }
@@ -179,6 +307,26 @@ function closeWelcome(){document.getElementById('m_welcome').classList.add('hidd
 // ============================================================
 //  EMPLOYEE ACTIONS
 // ============================================================
+function hasLunchStartedToday(){
+  const ss=getLS()||{};
+  return !!getAttendanceTime(ss,'lunchStartTime','i_ls');
+}
+function beginLunchAction(){
+  if(lunchActionLocked)return false;
+  lunchActionLocked=true;
+  if(lunchActionUnlockTimer){clearTimeout(lunchActionUnlockTimer);lunchActionUnlockTimer=null;}
+  const button=document.getElementById('bl');
+  if(button)button.disabled=true;
+  return true;
+}
+function finishLunchAction(){
+  if(lunchActionUnlockTimer)clearTimeout(lunchActionUnlockTimer);
+  lunchActionUnlockTimer=setTimeout(()=>{
+    lunchActionLocked=false;
+    lunchActionUnlockTimer=null;
+    updateEmpBtns();
+  },LUNCH_ACTION_COOLDOWN_MS);
+}
 async function empStart(){
   if(empState!=='not_started')return;
   const access=await checkRegionAccess('employee');
@@ -191,7 +339,7 @@ async function empStart(){
   rememberAttendanceTime('i_s','startTime',wStart);
   const lm=computeLateMinutesFromDate(wStart);
   const el=document.getElementById('e_ltag');if(el)el.textContent=t('lt_pre')+' '+lm+' '+t('lt_u');
-  const ss=getLS()||{};ss.lateMin=lm;localStorage.setItem('aloqa_emp_state',JSON.stringify(ss));
+  const ss=getLS()||{};ss.lateMin=lm;setLS(ss);
   await loadFaceControlSettings();
   updateEmpBtns();updateEmpStatusTag();startWT();saveLS();maybeStartFaceDetection();
   if(!(await savePartial(true)))return;
@@ -199,18 +347,30 @@ async function empStart(){
 }
 async function empLunch(){
   if(empState==='lunch'){await empBackLunch();return;}
-  if(empState!=='working')return;
-  lStart=tzNow();if(wStart)wAccum+=Math.floor((lStart-wStart)/1000);wStart=null;
-  empState='lunch';rememberAttendanceTime('i_ls','lunchStartTime',lStart);stopWT();pauseFaceMonitoringForBreak();updateEmpBtns();updateEmpStatusTag();startLT();saveLS();
-  if(!(await savePartial(true)))return;
-  toast('info',t('lunch_title'),`${t('lunch_rest_msg')} 🍽️`);
+  if(empState!=='working'||!beginLunchAction())return;
+  try{
+    if(hasLunchStartedToday()){
+      toast('warn',t('lunch_title'),t('lunch_already_completed'));
+      return;
+    }
+    lStart=tzNow();if(wStart)wAccum+=Math.floor((lStart-wStart)/1000);wStart=null;
+    empState='lunch';rememberAttendanceTime('i_ls','lunchStartTime',lStart);stopWT();pauseFaceMonitoringForBreak();updateEmpBtns();updateEmpStatusTag();startLT();saveLS();
+    if(!(await savePartial(true)))return;
+    toast('info',t('lunch_title'),`${t('lunch_rest_msg')} 🍽️`);
+  }finally{
+    finishLunchAction();
+  }
 }
 async function empBackLunch(){
-  if(empState!=='lunch')return;
-  const now=tzNow();if(lStart)lAccum+=Math.floor((now-lStart)/1000);lStart=null;
-  rememberAttendanceTime('i_le','lunchEndTime',now);empState='working';wStart=now;stopLT();resumeFaceMonitoringAfterBreak();updateEmpBtns();updateEmpStatusTag();startWT();saveLS();
-  if(!(await savePartial(true)))return;
-  toast('success',t('lunch_title'),`${t('work_continues')} 💼`);
+  if(empState!=='lunch'||!beginLunchAction())return;
+  try{
+    const now=tzNow();if(lStart)lAccum+=Math.floor((now-lStart)/1000);lStart=null;
+    rememberAttendanceTime('i_le','lunchEndTime',now);empState='working';wStart=now;stopLT();resumeFaceMonitoringAfterBreak();updateEmpBtns();updateEmpStatusTag();startWT();saveLS();
+    if(!(await savePartial(true)))return;
+    toast('success',t('lunch_title'),`${t('work_continues')} 💼`);
+  }finally{
+    finishLunchAction();
+  }
 }
 async function empExtraBreak(){
   if(empState==='break'){await empBackExtraBreak();return;}
@@ -320,7 +480,10 @@ async function empEnd(auto=false){
   }
   const now=tzNow();
   if(empState==='working'&&wStart)wAccum+=Math.floor((now-wStart)/1000);
-  if(empState==='lunch'&&lStart)lAccum+=Math.floor((now-lStart)/1000);
+  if(empState==='lunch'){
+    if(lStart)lAccum+=Math.floor((now-lStart)/1000);
+    rememberAttendanceTime('i_le','lunchEndTime',now);
+  }
   if(empState==='break'&&extraBreakStart){
     extraBreakAccum+=Math.floor((now-extraBreakStart)/1000);
     rememberAttendanceTime('i_br_e','extraBreakEndTime',now);
