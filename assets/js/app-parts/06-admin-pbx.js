@@ -1837,8 +1837,8 @@ async function loadAtt() {
       let status = row.status || 'kelmadi';
       if(isEmployeeOnLeaveDate(row.employee_id, dateFrom, leaveDateMap))status='work_leave';
       let arr = row.start_time ? row.start_time.substring(0, 5) : '-';
-      let lunchStart = row.lunch_start ? row.lunch_start.substring(0, 5) : '-';
-      let lunchEnd = row.lunch_end ? row.lunch_end.substring(0, 5) : '-';
+      let lunchStart = row.lunch_start ? row.lunch_start.substring(0, 8) : '-';
+      let lunchEnd = row.lunch_end ? row.lunch_end.substring(0, 8) : '-';
       let endTime = row.end_time ? row.end_time.substring(0, 5) : '-';
       let hrs = row.worked_seconds ? secToHMS(row.worked_seconds) : '-';
       let breakSec = row.extra_break_seconds || 0;
@@ -2062,8 +2062,8 @@ async function loadMonthly(){
           name:emp.name,
           start:rec.start_time?rec.start_time.substring(0,5):'-',
           hours:rec.work_seconds?secToHMS(rec.work_seconds):'-',
-          lunchStart:rec.lunch_start?rec.lunch_start.substring(0,5):'-',
-          lunchEnd:rec.lunch_end?rec.lunch_end.substring(0,5):'-',
+          lunchStart:rec.lunch_start?rec.lunch_start.substring(0,8):'-',
+          lunchEnd:rec.lunch_end?rec.lunch_end.substring(0,8):'-',
           breakTime:rec.extra_break_seconds?secToHMS(rec.extra_break_seconds):'-',
           end:rec.end_time?rec.end_time.substring(0,5):'-'
         });
@@ -2086,7 +2086,7 @@ async function loadMonthly(){
     er.forEach(rec=>{
       const tr=document.createElement('tr');
       tr.dataset.name=(emp.name||'').toLowerCase();
-      tr.innerHTML=`<td>${tbody.children.length+1}</td><td style="font-family:var(--mono)">${rec.work_date||'-'}</td><td>${emp.name}</td><td style="font-family:var(--mono)">${rec.start_time?rec.start_time.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.work_seconds?secToHMS(rec.work_seconds):'-'}</td><td style="font-family:var(--mono)">${rec.lunch_start?rec.lunch_start.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.lunch_end?rec.lunch_end.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.extra_break_seconds?secToHMS(rec.extra_break_seconds):'-'}</td><td style="font-family:var(--mono)">${rec.end_time?rec.end_time.substring(0,5):'-'}</td>`;
+      tr.innerHTML=`<td>${tbody.children.length+1}</td><td style="font-family:var(--mono)">${rec.work_date||'-'}</td><td>${emp.name}</td><td style="font-family:var(--mono)">${rec.start_time?rec.start_time.substring(0,5):'-'}</td><td style="font-family:var(--mono)">${rec.work_seconds?secToHMS(rec.work_seconds):'-'}</td><td style="font-family:var(--mono)">${rec.lunch_start?rec.lunch_start.substring(0,8):'-'}</td><td style="font-family:var(--mono)">${rec.lunch_end?rec.lunch_end.substring(0,8):'-'}</td><td style="font-family:var(--mono)">${rec.extra_break_seconds?secToHMS(rec.extra_break_seconds):'-'}</td><td style="font-family:var(--mono)">${rec.end_time?rec.end_time.substring(0,5):'-'}</td>`;
       tbody.appendChild(tr);
     });
     if(er.length===0){
