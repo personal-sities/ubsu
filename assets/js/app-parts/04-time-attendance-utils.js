@@ -30,7 +30,7 @@ function getTzTotalMinutes(date=new Date()){
 }
 function tzNow(){return new Date();}
 function fmtD(d){const p=getTzParts(d);return String(p.day).padStart(2,'0')+'.'+String(p.month).padStart(2,'0')+'.'+p.year;}
-function todayISO(){const p=getTzParts();return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0');}
+function todayISO(date=new Date()){const p=getTzParts(date);return p.year+'-'+String(p.month).padStart(2,'0')+'-'+String(p.day).padStart(2,'0');}
 function curM(){const p=getTzParts();return p.year+'-'+String(p.month).padStart(2,'0');}
 function fmtHM(d){const p=getTzParts(d);return String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0');}
 function fmtHMS(d){const p=getTzParts(d);return String(p.hour).padStart(2,'0')+':'+String(p.minute).padStart(2,'0')+':'+String(p.second).padStart(2,'0');}
