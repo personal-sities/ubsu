@@ -871,6 +871,30 @@ Object.assign(TR.en,{
   lunch_already_completed:'Today\'s lunch has already been completed',
   lunch_completed_btn:'Lunch completed'
 });
+Object.assign(TR.uz,{
+  work_already_started:'Bugungi ish allaqachon boshlangan. Vaqt qayta yozilmadi.',
+  work_already_ended:'Bugungi ish allaqachon yakunlangan. Vaqt qayta yozilmadi.',
+  lunch_already_active:'Tushlik hozir davom etmoqda.',
+  attendance_save_error:'Davomat ma\'lumoti Supabase\'ga saqlanmadi. Qayta urinib ko\'ring.',
+  attendance_restore_offline:'Supabase bilan aloqa vaqtincha uzildi. Oxirgi lokal holat ko\'rsatildi.',
+  attendance_schema_update_required:'Supabase davomat sxemasini yangilash kerak. Migratsiya SQL faylini ishga tushiring.'
+});
+Object.assign(TR.ru,{
+  work_already_started:'Рабочий день уже начат. Время не перезаписано.',
+  work_already_ended:'Рабочий день уже завершён. Время не перезаписано.',
+  lunch_already_active:'Обеденный перерыв уже активен.',
+  attendance_save_error:'Данные посещаемости не сохранены в Supabase. Повторите попытку.',
+  attendance_restore_offline:'Связь с Supabase временно недоступна. Показано локальное состояние.',
+  attendance_schema_update_required:'Обновите схему посещаемости Supabase, запустив SQL-миграцию.'
+});
+Object.assign(TR.en,{
+  work_already_started:'Today\'s work has already started. The time was not overwritten.',
+  work_already_ended:'Today\'s work has already ended. The time was not overwritten.',
+  lunch_already_active:'Lunch is already active.',
+  attendance_save_error:'Attendance was not saved to Supabase. Please try again.',
+  attendance_restore_offline:'Supabase is temporarily unavailable. The latest local state is shown.',
+  attendance_schema_update_required:'Update the Supabase attendance schema by running the SQL migration.'
+});
 let lang = localStorage.getItem('aloqa_lang') || 'uz';
 const t = k => ((TR[lang] && TR[lang][k]) ?? TR.uz[k] ?? k);
 const tf = (key, params={}) => Object.entries(params).reduce((acc,[name,value]) => acc.replaceAll(`{${name}}`, value), t(key));
