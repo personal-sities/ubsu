@@ -5,6 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "node server.js",
-    "electron": "electron ."
+    "electron": "electron .",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check server.js && node --check assets/js/app-parts/01-core.js && node --check assets/js/app-parts/02-access-settings.js && node --check assets/js/app-parts/03-translations.js && node --check assets/js/app-parts/04-time-attendance-utils.js && node --check assets/js/app-parts/05-notifications-feedback-login.js && node --check assets/js/app-parts/06-admin-pbx.js && node --check assets/js/app-parts/07-export-employee-state-actions.js && node --check assets/js/app-parts/08-timers-prayer-autoend.js && node --check assets/js/app-parts/09-face-detection.js && node --check assets/js/app-parts/10-employee-ui-init.js"
   }
 }
