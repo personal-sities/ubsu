@@ -1,4 +1,4 @@
-const CACHE_NAME = 'iau-agro-v5';
+const CACHE_NAME = 'aloqapro-v6';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
