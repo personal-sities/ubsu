@@ -29,13 +29,14 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/health') return sendJson(res, 200, { ok: true });
     if (url.pathname === '/env.js') return sendEnv(res);
     if (url.pathname.startsWith('/api/functions/v1/') && req.method === 'POST') {
+      await requireAdmin(req);
       return handleFunction(req, res, decodeURIComponent(url.pathname.split('/').pop()));
     }
 
     return serveStatic(url.pathname, res);
   } catch (error) {
     console.error(error);
-    sendJson(res, 500, { error: error.message || 'Server error' });
+    sendJson(res, error.status || 500, { error: error.message || 'Server error' });
   }
 });
 
@@ -77,6 +78,32 @@ async function handleFunction(req, res, name) {
   if (name === 'reset-employee-password') return resetEmployeePassword(res, body);
   if (name === 'onlinepbx') return sendJson(res, 200, emptyPbx(body));
   return sendJson(res, 404, { error: `Unknown function: ${name}` });
+}
+
+async function requireAdmin(req) {
+  const authorization = String(req.headers.authorization || '');
+  const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) throw httpError(401, 'Authorization token is required');
+
+  const baseUrl = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  const anonKey = process.env.SUPABASE_ANON_KEY || '';
+  if (!baseUrl || !anonKey) throw httpError(500, 'Supabase auth config topilmadi');
+  const userResponse = await fetch(`${baseUrl}/auth/v1/user`, {
+    headers: { apikey: anonKey, Authorization: `Bearer ${token}` }
+  });
+  if (!userResponse.ok) throw httpError(401, 'Invalid or expired session');
+  const user = await userResponse.json();
+  if (!user?.id) throw httpError(401, 'Invalid session user');
+
+  const admins = await supabaseRest(`/rest/v1/admins?user_id=eq.${encodeURIComponent(user.id)}&active=eq.true&select=id`, { method: 'GET' });
+  if (!admins?.length) throw httpError(403, 'Admin access required');
+  return user;
+}
+
+function httpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
 }
 
 async function createEmployee(res, body) {
@@ -196,7 +223,10 @@ function serveStatic(requestPath, res) {
   if (!fullPath.startsWith(ROOT)) return sendText(res, 403, 'Forbidden');
   fs.readFile(fullPath, (err, data) => {
     if (err) return sendText(res, 404, 'Not found');
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(fullPath).toLowerCase()] || 'application/octet-stream' });
+    const extension = path.extname(fullPath).toLowerCase();
+    const headers = { 'Content-Type': MIME[extension] || 'application/octet-stream' };
+    if (['.html', '.js', '.css'].includes(extension)) headers['Cache-Control'] = 'no-cache';
+    res.writeHead(200, headers);
     res.end(data);
   });
 }
