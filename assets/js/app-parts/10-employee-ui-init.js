@@ -3,15 +3,31 @@
 function updateEmpBtns(){
   const bsE=document.getElementById('bs'),blE=document.getElementById('bl'),bbE=document.getElementById('bbr'),bpE=document.getElementById('bp'),beE=document.getElementById('be'),bcE=document.getElementById('bc');
   const dis=(b,d)=>{if(b)b.disabled=d;};
-  const lunchUsed=empState==='working'&&typeof hasLunchStartedToday==='function'&&hasLunchStartedToday();
+  const allButtons=[bsE,blE,bbE,bpE,beE,bcE];
+  const actionsBusy=(typeof employeeActionInFlight!=='undefined'&&!!employeeActionInFlight)||(typeof employeeStateLoading!=='undefined'&&!!employeeStateLoading);
   if(bcE)bcE.classList.toggle('hidden',empState!=='paused');
-  if(empState==='not_started'){dis(bsE,false);dis(blE,true);dis(bbE,true);dis(bpE,true);dis(beE,true);if(blE){blE.textContent=t('bl');blE.onclick=empLunch;} if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
-  else if(empState==='working'){dis(bsE,true);dis(blE,lunchUsed);dis(bbE,false);dis(bpE,false);dis(beE,false);if(blE){blE.textContent=lunchUsed?t('lunch_completed_btn'):t('bl');blE.onclick=empLunch;} if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
-  else if(empState==='lunch'){dis(bsE,true);dis(blE,false);dis(bbE,true);dis(bpE,true);dis(beE,true);if(blE){blE.textContent=t('bb');blE.onclick=empBackLunch;} if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
-  else if(empState==='break'){dis(bsE,true);dis(blE,true);dis(bbE,false);dis(bpE,true);dis(beE,true);if(bbE){bbE.textContent=t('break_back');bbE.onclick=empBackExtraBreak;} if(blE){blE.textContent=t('bl');blE.onclick=empLunch;} if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}}
-  else if(empState==='prayer'){dis(bsE,true);dis(blE,true);dis(bbE,true);dis(bpE,false);dis(beE,true);if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;} if(bpE){bpE.textContent=t('prayer_back');bpE.onclick=empBackPrayer;}}
-  else if(empState==='paused'||empState==='ended'){dis(bsE,true);dis(blE,true);dis(bbE,true);dis(bpE,true);dis(beE,true);}
-  if(typeof lunchActionLocked!=='undefined'&&lunchActionLocked)dis(blE,true);
+  if(blE){blE.textContent=t('bl');blE.onclick=empLunch;}
+  if(bbE){bbE.textContent=t('break_btn');bbE.onclick=empExtraBreak;}
+  if(bpE){bpE.textContent=t('prayer_btn');bpE.onclick=empPrayer;}
+  if(empState==='not_started'){
+    dis(bsE,false);dis(blE,true);dis(bbE,true);dis(bpE,true);dis(beE,true);dis(bcE,true);
+  }else if(empState==='working'){
+    dis(bsE,true);dis(blE,false);dis(bbE,false);dis(bpE,false);dis(beE,false);dis(bcE,true);
+  }else if(empState==='lunch'){
+    dis(bsE,true);dis(blE,false);dis(bbE,true);dis(bpE,true);dis(beE,false);dis(bcE,true);
+    if(blE){blE.textContent=t('bb');blE.onclick=empBackLunch;}
+  }else if(empState==='break'){
+    dis(bsE,true);dis(blE,true);dis(bbE,false);dis(bpE,true);dis(beE,false);dis(bcE,true);
+    if(bbE){bbE.textContent=t('break_back');bbE.onclick=empBackExtraBreak;}
+  }else if(empState==='prayer'){
+    dis(bsE,true);dis(blE,true);dis(bbE,true);dis(bpE,false);dis(beE,false);dis(bcE,true);
+    if(bpE){bpE.textContent=t('prayer_back');bpE.onclick=empBackPrayer;}
+  }else if(empState==='paused'){
+    dis(bsE,true);dis(blE,true);dis(bbE,true);dis(bpE,true);dis(beE,false);dis(bcE,false);
+  }else{
+    allButtons.forEach(button=>dis(button,true));
+  }
+  if(actionsBusy)allButtons.forEach(button=>dis(button,true));
 }
 function updateEmpStatusTag(){
   const map={not_started:t('st0'),working:t('st1'),lunch:t('st2'),break:t('break_state'),prayer:t('prayer_btn'),paused:t('paused'),ended:t('st4')};
